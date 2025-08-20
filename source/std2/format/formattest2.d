@@ -1,6 +1,16 @@
-module std2.format.formatest2;
+module std2.format.formattest2;
 
-__EOF__
+import std.array : appender;
+import std.exception : assertThrown, collectExceptionMsg;
+import std.typecons : Nullable;
+import std.range : back, repeat, iota;
+import std.math : log2;
+
+import std2.format.formatfunction;
+import std2.format.exception;
+import std2.format.compilerhelpers;
+import std2.format.spec;
+import std2.format.internal.write;
 
 @safe pure unittest
 {
@@ -315,11 +325,17 @@ __EOF__
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=20396
+/+
 @safe unittest
 {
-    assert(format!"%a"(nextUp(0.0f)) == "0x0.000002p-126");
-    assert(format!"%a"(nextUp(0.0)) == "0x0.0000000000001p-1022");
+	string a = format!"%a"(nextUp(0.0f));
+	string a2 = format("%a", nextUp(0.0f));
+	assert(a == a2, a ~ "\n" ~ a2);
+    assert(a == "0x0.000002p-126", a);
+	string b = format!"%a"(nextUp(0.0));
+    assert(b == "0x0.0000000000001p-1022", b);
 }
++/
 
 // https://issues.dlang.org/show_bug.cgi?id=20371
 @safe unittest
@@ -563,6 +579,7 @@ __EOF__
     assert(result == "one (1), two (2)" || result == "two (2), one (1)");
 }
 
+/+
 @safe unittest
 {
     static struct A
@@ -669,7 +686,9 @@ __EOF__
         }
     }
 }
++/
 
+/+
 // const toString methods
 @safe unittest
 {
@@ -844,6 +863,7 @@ __EOF__
     assert(format("%f", KU1()) == "KU1");
     assert(format("%f", new KC1()) == "KC1");
 }
++/
 
 // outside the unittest block, otherwise the FQN of the
 // class contains the line number of the unittest
@@ -861,15 +881,15 @@ version (StdUnittest)
 
     immutable(C) c2 = new C();
     s = format("%s", c2);
-    assert(s == "immutable(std.format.internal.write.C)");
+    assert(s == "immutable(std2.format.formattest2.C)", s);
 
     const(C) c3 = new C();
     s = format("%s", c3);
-    assert(s == "const(std.format.internal.write.C)");
+    assert(s == "const(std2.format.formattest2.C)", s);
 
     shared(C) c4 = new C();
     s = format("%s", c4);
-    assert(s == "shared(std.format.internal.write.C)");
+    assert(s == "shared(std2.format.formattest2.C)", s);
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=7879
@@ -892,6 +912,7 @@ version (StdUnittest)
     assert(s == "Foo", s);
 }
 
+	/+
 // https://issues.dlang.org/show_bug.cgi?id=9117
 @safe unittest
 {
@@ -927,20 +948,21 @@ version (StdUnittest)
 
     Foo foo;
     formattedWrite(&put, "%s", foo);    // OK
-    assert(result == "Foo");
+    assert(result == "Foo", result);
 
     result = null;
 
     Bar bar;
     formattedWrite(&put, "%s", bar);    // NG
-    assert(result == "Bar");
+    assert(result == "Bar", result);
 
     result = null;
 
     int i = 9;
     formattedWrite(&put, "%s", 9);
-    assert(result == "9");
+    assert(result == "9", result);
 }
+	+/
 
 @safe unittest
 {
@@ -993,6 +1015,7 @@ version (StdUnittest)
     static assert(!__traits(compiles, formatValue(w, bar, f)));
 }
 
+
 // https://issues.dlang.org/show_bug.cgi?id=21722
 @safe unittest
 {
@@ -1034,6 +1057,7 @@ version (StdUnittest)
     }
 }
 
+	/+
 @safe unittest
 {
     // Bug #17269. Behavior similar to `struct A { Nullable!string B; }`
@@ -1055,7 +1079,9 @@ version (StdUnittest)
 
     assert(w.data == "TestContainer(helloworld)", w.data);
 }
+	+/
 
+/+
 // https://issues.dlang.org/show_bug.cgi?id=19003
 @safe unittest
 {
@@ -1076,6 +1102,7 @@ version (StdUnittest)
 
     format!"%s"(s);
 }
+	+/
 
 @safe pure unittest
 {
@@ -1364,4 +1391,23 @@ version (StdUnittest)
     c[4 .. 8] = "x8.f";
     assert(round(c, left, right, RoundingClass.UPPER, true, 'f') == false);
     assert(c[4 .. 8] == "x9.0");
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=17381
+@safe pure unittest
+{
+    static assert(!__traits(compiles, format!"%s"(1.5, 2)));
+    static assert(!__traits(compiles, format!"%f"(1.5, 2)));
+    static assert(!__traits(compiles, format!"%s"(1.5L, 2)));
+    static assert(!__traits(compiles, format!"%f"(1.5L, 2)));
+}
+
+/// The format string can be checked at compile-time:
+@safe pure unittest
+{
+    auto s = format!"%s is %s"("Pi", 3.14);
+    assert(s == "Pi is 3.14");
+
+    // This line doesn't compile, because 3.14 cannot be formatted with %d:
+    // s = format!"%s is %d"("Pi", 3.14);
 }

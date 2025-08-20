@@ -1,11 +1,13 @@
 module std2.format.formatfunction;
 
-import std.traits : isSomeChar;
+import std.traits : isSomeChar, isSomeString;
 import std.array : appender;
 import std.conv : text;
 
 import std2.format.internal.write;
 import std2.format.exception;
+import std2.format.spec;
+import std2.format.internal.checkformatexception;
 
 /**
 Converts its arguments according to a format string into a string.
@@ -142,3 +144,117 @@ format specifiers. To avoid this behavior, use "%-(" instead of "%(":
     assertThrown!FormatException(format("%d", "foo"));
 }
 
+/// ditto
+typeof(fmt) format(alias fmt, Args...)(Args args)
+if (isSomeString!(typeof(fmt)))
+{
+    import std.array : appender;
+    import std.range.primitives : ElementEncodingType;
+    import std.traits : Unqual;
+
+    alias e = checkFormatException!(fmt, Args);
+    alias Char = char;
+
+    static assert(!e, e);
+    auto w = appender!(string);
+
+    // no need to traverse the string twice during compile time
+    if (!__ctfe)
+    {
+        enum len = guessLength(fmt);
+        w.reserve(len);
+    }
+    else
+    {
+        w.reserve(fmt.length);
+    }
+
+    formattedWrite(w, fmt, args);
+    return w.data;
+}
+
+// called during compilation to guess the length of the
+// result of format
+private size_t guessLength(string fmtString) pure @safe
+{
+    import std.array : appender;
+
+    size_t len;
+    auto output = appender!(string)();
+    auto spec = FormatSpec(fmtString);
+    while (spec.writeUpToNextSpec(output))
+    {
+        // take a guess
+        if (spec.width == 0 && (spec.precision == spec.UNSPECIFIED || spec.precision == spec.DYNAMIC))
+        {
+            switch (spec.spec)
+            {
+                case 'c':
+                    ++len;
+                    break;
+                case 'd':
+                case 'x':
+                case 'X':
+                    len += 3;
+                    break;
+                case 'b':
+                    len += 8;
+                    break;
+                case 'f':
+                case 'F':
+                    len += 10;
+                    break;
+                case 's':
+                case 'e':
+                case 'E':
+                case 'g':
+                case 'G':
+                    len += 12;
+                    break;
+                default: break;
+            }
+
+            continue;
+        }
+
+        if ((spec.spec == 'e' || spec.spec == 'E' || spec.spec == 'g' ||
+             spec.spec == 'G' || spec.spec == 'f' || spec.spec == 'F') &&
+            spec.precision != spec.UNSPECIFIED && spec.precision != spec.DYNAMIC &&
+            spec.width == 0
+        )
+        {
+            len += spec.precision + 5;
+            continue;
+        }
+
+        if (spec.width == spec.precision)
+            len += spec.width;
+        else if (spec.width > 0 && spec.width != spec.DYNAMIC &&
+                 (spec.precision == spec.UNSPECIFIED || spec.width > spec.precision))
+        {
+            len += spec.width;
+        }
+        else if (spec.precision != spec.UNSPECIFIED && spec.precision > spec.width)
+            len += spec.precision;
+    }
+    len += output.data.length;
+    return len;
+}
+
+@safe pure
+unittest
+{
+    assert(guessLength("%c") == 1);
+    assert(guessLength("%d") == 3);
+    assert(guessLength("%x") == 3);
+    assert(guessLength("%b") == 8);
+    assert(guessLength("%f") == 10);
+    assert(guessLength("%s") == 12);
+    assert(guessLength("%02d") == 2);
+    assert(guessLength("%02d") == 2);
+    assert(guessLength("%4.4d") == 4);
+    assert(guessLength("%2.4f") == 4);
+    assert(guessLength("%02d:%02d:%02d") == 8);
+    assert(guessLength("%0.2f") == 7);
+    assert(guessLength("%0*d") == 0);
+}

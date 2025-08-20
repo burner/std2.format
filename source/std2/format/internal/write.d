@@ -748,8 +748,8 @@ enum HasToStringResult
     customPutWriterFormatSpec,
 }
 
-private alias DScannerBug895 = int[256];
-private immutable bool hasPreviewIn = ((in DScannerBug895 a) { return __traits(isRef, a); })(DScannerBug895.init);
+package(std2.format) alias DScannerBug895 = int[256];
+package(std2.format) immutable bool hasPreviewIn = ((in DScannerBug895 a) { return __traits(isRef, a); })(DScannerBug895.init);
 
 template hasToString(T, Char)
 {
