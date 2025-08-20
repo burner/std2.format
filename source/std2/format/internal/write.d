@@ -663,7 +663,7 @@ if (is(AssocArrayTypeOf!T) && !is(T == enum))
     enforceFmt(spec == 's' || spec == '(',
         "incompatible format character for associative array argument: %" ~ spec);
 
-    enum const(char)[] defSpec = "%s" ~ f.keySeparator ~ "%s" ~ f.seqSeparator;
+    enum string defSpec = "%s" ~ f.keySeparator ~ "%s" ~ f.seqSeparator;
     auto fmtSpec = spec == '(' ? f.nested : defSpec;
 
     auto key_first = true;
@@ -995,7 +995,7 @@ if ((is(T == struct) || is(T == union)) && !is(BuiltinTypeOf!T) && !is(T == enum
         static assert(!__traits(isDisabled, T.toString), T.stringof ~
             " cannot be formatted because its `toString` is marked with `@disable`");
 
-    enforceValidFormatSpec!(T, char)(f);
+    enforceValidFormatSpec!(T)(f);
     static if (hasToString!(T, char))
     {
         formatObject(w, val, f);

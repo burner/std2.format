@@ -1,6 +1,9 @@
 module std2.format.tests;
 
 import std.exception : collectException, collectExceptionMsg;
+import std.range : front, popFront;
+import std.meta : AliasSeq;
+
 import std2.format.exception : FormatException;
 import std2.format.formattest;
 import std2.format.spec;
@@ -60,6 +63,240 @@ import std2.format.compilerhelpers;
     formatTest("%+r", cast(wchar)'c', [0,       'c']);
     formatTest("%+r", cast(dchar)'c', [0, 0, 0, 'c']);
     formatTest("%+r", '本', ['\x67', '\x2c']);
+}
+
+@safe pure unittest
+{
+    //Little Endian
+    formatTest("%-r", "ab"c, ['a'         , 'b'         ]);
+    formatTest("%-r", "ab"w, ['a', 0      , 'b', 0      ]);
+    formatTest("%-r", "ab"d, ['a', 0, 0, 0, 'b', 0, 0, 0]);
+    formatTest("%-r", "日本語"c, ['\xe6', '\x97', '\xa5', '\xe6', '\x9c', '\xac',
+                                  '\xe8', '\xaa', '\x9e']);
+    formatTest("%-r", "日本語"w, ['\xe5', '\x65', '\x2c', '\x67', '\x9e', '\x8a']);
+    formatTest("%-r", "日本語"d, ['\xe5', '\x65', '\x00', '\x00', '\x2c', '\x67',
+                                  '\x00', '\x00', '\x9e', '\x8a', '\x00', '\x00']);
+
+    //Big Endian
+    formatTest("%+r", "ab"c, [         'a',          'b']);
+    formatTest("%+r", "ab"w, [      0, 'a',       0, 'b']);
+    formatTest("%+r", "ab"d, [0, 0, 0, 'a', 0, 0, 0, 'b']);
+    formatTest("%+r", "日本語"c, ['\xe6', '\x97', '\xa5', '\xe6', '\x9c', '\xac',
+                                  '\xe8', '\xaa', '\x9e']);
+    formatTest("%+r", "日本語"w, ['\x65', '\xe5', '\x67', '\x2c', '\x8a', '\x9e']);
+    formatTest("%+r", "日本語"d, ['\x00', '\x00', '\x65', '\xe5', '\x00', '\x00',
+                                  '\x67', '\x2c', '\x00', '\x00', '\x8a', '\x9e']);
+}
+
+@safe unittest
+{
+    formatTest("abc", "abc");
+}
+
+@safe unittest
+{
+    // Test for bug 5371 for structs
+    struct S1
+    {
+        const string var;
+        alias var this;
+    }
+
+    struct S2
+    {
+        string var;
+        alias var this;
+    }
+
+    formatTest(S1("s1"), "s1");
+    formatTest(S2("s2"), "s2");
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=6640
+@safe unittest
+{
+    struct Range
+    {
+        @safe:
+
+        string value;
+        @property bool empty() const { return !value.length; }
+        @property dchar front() const { return value.front; }
+        void popFront() { value.popFront(); }
+
+        @property size_t length() const { return value.length; }
+    }
+    immutable table =
+    [
+        ["[%s]", "[string]"],
+        ["[%10s]", "[    string]"],
+        ["[%-10s]", "[string    ]"],
+        ["[%(%02x %)]", "[73 74 72 69 6e 67]"],
+        ["[%(%c %)]", "[s t r i n g]"],
+    ];
+    foreach (e; table)
+    {
+        formatTest(e[0], "string", e[1]);
+        formatTest(e[0], Range("string"), e[1]);
+    }
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=12505
+@safe pure unittest
+{
+    void* p = null;
+    formatTest("%08X", p, "00000000");
+}
+
+@safe unittest
+{
+    static if (is(float4))
+    {
+        version (X86)
+        {
+            version (OSX) {/* https://issues.dlang.org/show_bug.cgi?id=17823 */}
+        }
+        else
+        {
+            float4 f;
+            f.array[0] = 1;
+            f.array[1] = 2;
+            f.array[2] = 3;
+            f.array[3] = 4;
+            formatTest(f, "[1, 2, 3, 4]");
+        }
+    }
+}
+
+@safe unittest
+{
+    enum A { first, second, third }
+    formatTest(A.second, "second");
+    formatTest(cast(A) 72, "cast(A)72");
+}
+@safe unittest
+{
+    enum A : string { one = "uno", two = "dos", three = "tres" }
+    formatTest(A.three, "three");
+    formatTest(cast(A)"mill\&oacute;n", "cast(A)mill\&oacute;n");
+}
+@safe unittest
+{
+    enum A : bool { no, yes }
+    formatTest(A.yes, "yes");
+    formatTest(A.no, "no");
+}
+@safe unittest
+{
+    // Test for bug 6892
+    enum Foo { A = 10 }
+    formatTest("%s",    Foo.A, "A");
+    formatTest(">%4s<", Foo.A, ">   A<");
+    formatTest("%04d",  Foo.A, "0010");
+    formatTest("%+2u",  Foo.A, "10");
+    formatTest("%02x",  Foo.A, "0a");
+    formatTest("%3o",   Foo.A, " 12");
+    formatTest("%b",    Foo.A, "1010");
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=8921
+@safe unittest
+{
+    enum E : char { A = 'a', B = 'b', C = 'c' }
+    E[3] e = [E.A, E.B, E.C];
+    formatTest(e, "[A, B, C]");
+
+    E[] e2 = [E.A, E.B, E.C];
+    formatTest(e2, "[A, B, C]");
+}
+
+@safe pure unittest
+{
+    int* p = null;
+    formatTest(p, "null");
+
+    auto q = () @trusted { return cast(void*) 0xFFEECCAA; }();
+    formatTest(q, "FFEECCAA");
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=9588
+@safe pure unittest
+{
+    struct S { int x; bool empty() { return false; } }
+    formatTest(S(), "S(0)");
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=3890
+@safe unittest
+{
+    struct Int{ int n; }
+    struct Pair{ string s; Int i; }
+    formatTest(Pair("hello", Int(5)),
+               `Pair("hello", Int(5))`);
+}
+
+@safe unittest
+{
+    // string literal from valid UTF sequence is encoding free.
+    static foreach (StrType; AliasSeq!(string, wstring, dstring))
+    {
+        // Valid and printable (ASCII)
+        formatTest([cast(StrType)"hello"],
+                   `["hello"]`);
+
+        // 1 character escape sequences (' is not escaped in strings)
+        formatTest([cast(StrType)"\"'\0\\\a\b\f\n\r\t\v"],
+                   `["\"'\0\\\a\b\f\n\r\t\v"]`);
+
+        // 1 character optional escape sequences
+        formatTest([cast(StrType)"\'\?"],
+                   `["'?"]`);
+
+        // Valid and non-printable code point (<= U+FF)
+        formatTest([cast(StrType)"\x10\x1F\x20test"],
+                   `["\x10\x1F test"]`);
+
+        // Valid and non-printable code point (<= U+FFFF)
+        formatTest([cast(StrType)"\u200B..\u200F"],
+                   `["\u200B..\u200F"]`);
+
+        // Valid and non-printable code point (<= U+10FFFF)
+        formatTest([cast(StrType)"\U000E0020..\U000E007F"],
+                   `["\U000E0020..\U000E007F"]`);
+    }
+
+    // invalid UTF sequence needs hex-string literal postfix (c/w/d)
+    () @trusted
+    {
+        // U+FFFF with UTF-8 (Invalid code point for interchange)
+        formatTest([cast(string)[0xEF, 0xBF, 0xBF]],
+                   `[[cast(char) 0xEF, cast(char) 0xBF, cast(char) 0xBF]]`);
+
+        // U+FFFF with UTF-16 (Invalid code point for interchange)
+        formatTest([cast(wstring)[0xFFFF]],
+                   `[[cast(wchar) 0xFFFF]]`);
+
+        // U+FFFF with UTF-32 (Invalid code point for interchange)
+        formatTest([cast(dstring)[0xFFFF]],
+                   `[[cast(dchar) 0xFFFF]]`);
+    } ();
+}
+
+@safe unittest
+{
+    // stop auto escaping inside range formatting
+    auto arr = ["hello", "world"];
+    formatTest("%(%s, %)",  arr, `"hello", "world"`);
+    formatTest("%-(%s, %)", arr, `hello, world`);
+
+    auto aa1 = [1:"hello", 2:"world"];
+    formatTest("%(%s:%s, %)",  aa1, [`1:"hello", 2:"world"`, `2:"world", 1:"hello"`]);
+    formatTest("%-(%s:%s, %)", aa1, [`1:hello, 2:world`, `2:world, 1:hello`]);
+
+    auto aa2 = [1:["ab", "cd"], 2:["ef", "gh"]];
+    formatTest("%-(%s:%s, %)",        aa2, [`1:["ab", "cd"], 2:["ef", "gh"]`, `2:["ef", "gh"], 1:["ab", "cd"]`]);
+    formatTest("%-(%s:%(%s%), %)",    aa2, [`1:"ab""cd", 2:"ef""gh"`, `2:"ef""gh", 1:"ab""cd"`]);
+    formatTest("%-(%s:%-(%s%)%|, %)", aa2, [`1:abcd, 2:efgh`, `2:efgh, 1:abcd`]);
 }
 
 __EOF__
@@ -188,31 +425,6 @@ __EOF__
 
 @safe unittest
 {
-    formatTest("abc", "abc");
-}
-
-
-@safe unittest
-{
-    // Test for bug 5371 for structs
-    struct S1
-    {
-        const string var;
-        alias var this;
-    }
-
-    struct S2
-    {
-        string var;
-        alias var this;
-    }
-
-    formatTest(S1("s1"), "s1");
-    formatTest(S2("s2"), "s2");
-}
-
-@safe unittest
-{
     struct S3
     {
         string val; alias val this;
@@ -220,105 +432,6 @@ __EOF__
     }
 
     formatTest(S3("s3"), "S");
-}
-
-@safe pure unittest
-{
-    //Little Endian
-    formatTest("%-r", "ab"c, ['a'         , 'b'         ]);
-    formatTest("%-r", "ab"w, ['a', 0      , 'b', 0      ]);
-    formatTest("%-r", "ab"d, ['a', 0, 0, 0, 'b', 0, 0, 0]);
-    formatTest("%-r", "日本語"c, ['\xe6', '\x97', '\xa5', '\xe6', '\x9c', '\xac',
-                                  '\xe8', '\xaa', '\x9e']);
-    formatTest("%-r", "日本語"w, ['\xe5', '\x65', '\x2c', '\x67', '\x9e', '\x8a']);
-    formatTest("%-r", "日本語"d, ['\xe5', '\x65', '\x00', '\x00', '\x2c', '\x67',
-                                  '\x00', '\x00', '\x9e', '\x8a', '\x00', '\x00']);
-
-    //Big Endian
-    formatTest("%+r", "ab"c, [         'a',          'b']);
-    formatTest("%+r", "ab"w, [      0, 'a',       0, 'b']);
-    formatTest("%+r", "ab"d, [0, 0, 0, 'a', 0, 0, 0, 'b']);
-    formatTest("%+r", "日本語"c, ['\xe6', '\x97', '\xa5', '\xe6', '\x9c', '\xac',
-                                  '\xe8', '\xaa', '\x9e']);
-    formatTest("%+r", "日本語"w, ['\x65', '\xe5', '\x67', '\x2c', '\x8a', '\x9e']);
-    formatTest("%+r", "日本語"d, ['\x00', '\x00', '\x65', '\xe5', '\x00', '\x00',
-                                  '\x67', '\x2c', '\x00', '\x00', '\x8a', '\x9e']);
-}
-
-// https://issues.dlang.org/show_bug.cgi?id=6640
-@safe unittest
-{
-    struct Range
-    {
-        @safe:
-
-        string value;
-        @property bool empty() const { return !value.length; }
-        @property dchar front() const { return value.front; }
-        void popFront() { value.popFront(); }
-
-        @property size_t length() const { return value.length; }
-    }
-    immutable table =
-    [
-        ["[%s]", "[string]"],
-        ["[%10s]", "[    string]"],
-        ["[%-10s]", "[string    ]"],
-        ["[%(%02x %)]", "[73 74 72 69 6e 67]"],
-        ["[%(%c %)]", "[s t r i n g]"],
-    ];
-    foreach (e; table)
-    {
-        formatTest(e[0], "string", e[1]);
-        formatTest(e[0], Range("string"), e[1]);
-    }
-}
-
-@safe unittest
-{
-    // string literal from valid UTF sequence is encoding free.
-    static foreach (StrType; AliasSeq!(string, wstring, dstring))
-    {
-        // Valid and printable (ASCII)
-        formatTest([cast(StrType)"hello"],
-                   `["hello"]`);
-
-        // 1 character escape sequences (' is not escaped in strings)
-        formatTest([cast(StrType)"\"'\0\\\a\b\f\n\r\t\v"],
-                   `["\"'\0\\\a\b\f\n\r\t\v"]`);
-
-        // 1 character optional escape sequences
-        formatTest([cast(StrType)"\'\?"],
-                   `["'?"]`);
-
-        // Valid and non-printable code point (<= U+FF)
-        formatTest([cast(StrType)"\x10\x1F\x20test"],
-                   `["\x10\x1F test"]`);
-
-        // Valid and non-printable code point (<= U+FFFF)
-        formatTest([cast(StrType)"\u200B..\u200F"],
-                   `["\u200B..\u200F"]`);
-
-        // Valid and non-printable code point (<= U+10FFFF)
-        formatTest([cast(StrType)"\U000E0020..\U000E007F"],
-                   `["\U000E0020..\U000E007F"]`);
-    }
-
-    // invalid UTF sequence needs hex-string literal postfix (c/w/d)
-    () @trusted
-    {
-        // U+FFFF with UTF-8 (Invalid code point for interchange)
-        formatTest([cast(string)[0xEF, 0xBF, 0xBF]],
-                   `[[cast(char) 0xEF, cast(char) 0xBF, cast(char) 0xBF]]`);
-
-        // U+FFFF with UTF-16 (Invalid code point for interchange)
-        formatTest([cast(wstring)[0xFFFF]],
-                   `[[cast(wchar) 0xFFFF]]`);
-
-        // U+FFFF with UTF-32 (Invalid code point for interchange)
-        formatTest([cast(dstring)[0xFFFF]],
-                   `[[cast(dchar) 0xFFFF]]`);
-    } ();
 }
 
 // alias this, input range I/F, and toString()
@@ -388,23 +501,6 @@ __EOF__
     // nested range formatting with array of string
     formatTest("%({%(%02x %)}%| %)", ["test", "msg"],
                `{74 65 73 74} {6d 73 67}`);
-}
-
-@safe unittest
-{
-    // stop auto escaping inside range formatting
-    auto arr = ["hello", "world"];
-    formatTest("%(%s, %)",  arr, `"hello", "world"`);
-    formatTest("%-(%s, %)", arr, `hello, world`);
-
-    auto aa1 = [1:"hello", 2:"world"];
-    formatTest("%(%s:%s, %)",  aa1, [`1:"hello", 2:"world"`, `2:"world", 1:"hello"`]);
-    formatTest("%-(%s:%s, %)", aa1, [`1:hello, 2:world`, `2:world, 1:hello`]);
-
-    auto aa2 = [1:["ab", "cd"], 2:["ef", "gh"]];
-    formatTest("%-(%s:%s, %)",        aa2, [`1:["ab", "cd"], 2:["ef", "gh"]`, `2:["ef", "gh"], 1:["ab", "cd"]`]);
-    formatTest("%-(%s:%(%s%), %)",    aa2, [`1:"ab""cd", 2:"ef""gh"`, `2:"ef""gh", 1:"ab""cd"`]);
-    formatTest("%-(%s:%-(%s%)%|, %)", aa2, [`1:abcd, 2:efgh`, `2:efgh, 1:abcd`]);
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=18778
@@ -577,12 +673,6 @@ __EOF__
     }
 }
 
-// https://issues.dlang.org/show_bug.cgi?id=9588
-@safe pure unittest
-{
-    struct S { int x; bool empty() { return false; } }
-    formatTest(S(), "S(0)");
-}
 
 // https://issues.dlang.org/show_bug.cgi?id=4638
 @safe unittest
@@ -594,16 +684,6 @@ __EOF__
     formatTest(U16(), "blah");
     formatTest(U32(), "blah");
 }
-
-// https://issues.dlang.org/show_bug.cgi?id=3890
-@safe unittest
-{
-    struct Int{ int n; }
-    struct Pair{ string s; Int i; }
-    formatTest(Pair("hello", Int(5)),
-               `Pair("hello", Int(5))`);
-}
-
 
 @safe unittest
 {
@@ -641,57 +721,6 @@ __EOF__
 }
 
 
-@safe unittest
-{
-    enum A { first, second, third }
-    formatTest(A.second, "second");
-    formatTest(cast(A) 72, "cast(A)72");
-}
-@safe unittest
-{
-    enum A : string { one = "uno", two = "dos", three = "tres" }
-    formatTest(A.three, "three");
-    formatTest(cast(A)"mill\&oacute;n", "cast(A)mill\&oacute;n");
-}
-@safe unittest
-{
-    enum A : bool { no, yes }
-    formatTest(A.yes, "yes");
-    formatTest(A.no, "no");
-}
-@safe unittest
-{
-    // Test for bug 6892
-    enum Foo { A = 10 }
-    formatTest("%s",    Foo.A, "A");
-    formatTest(">%4s<", Foo.A, ">   A<");
-    formatTest("%04d",  Foo.A, "0010");
-    formatTest("%+2u",  Foo.A, "10");
-    formatTest("%02x",  Foo.A, "0a");
-    formatTest("%3o",   Foo.A, " 12");
-    formatTest("%b",    Foo.A, "1010");
-}
-
-// https://issues.dlang.org/show_bug.cgi?id=8921
-@safe unittest
-{
-    enum E : char { A = 'a', B = 'b', C = 'c' }
-    E[3] e = [E.A, E.B, E.C];
-    formatTest(e, "[A, B, C]");
-
-    E[] e2 = [E.A, E.B, E.C];
-    formatTest(e2, "[A, B, C]");
-}
-
-@safe pure unittest
-{
-    int* p = null;
-    formatTest(p, "null");
-
-    auto q = () @trusted { return cast(void*) 0xFFEECCAA; }();
-    formatTest(q, "FFEECCAA");
-}
-
 
 @safe pure unittest
 {
@@ -705,31 +734,4 @@ __EOF__
 
     S* q = () @trusted { return cast(S*) 0xFFEECCAA; } ();
     formatTest(q, "FFEECCAA");
-}
-
-// https://issues.dlang.org/show_bug.cgi?id=12505
-@safe pure unittest
-{
-    void* p = null;
-    formatTest("%08X", p, "00000000");
-}
-
-@safe unittest
-{
-    static if (is(float4))
-    {
-        version (X86)
-        {
-            version (OSX) {/* https://issues.dlang.org/show_bug.cgi?id=17823 */}
-        }
-        else
-        {
-            float4 f;
-            f.array[0] = 1;
-            f.array[1] = 2;
-            f.array[2] = 3;
-            f.array[3] = 4;
-            formatTest(f, "[1, 2, 3, 4]");
-        }
-    }
 }
