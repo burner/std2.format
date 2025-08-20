@@ -1927,7 +1927,6 @@ if (isSomeString!(typeof(fmt)))
     return .formattedWrite(w, fmt, args);
 }
 
-/*
 /// The format string can be checked at compile-time:
 @safe pure unittest
 {
@@ -1938,4 +1937,3 @@ if (isSomeString!(typeof(fmt)))
     // This line doesn't compile, because 3.14 cannot be formatted with %d:
     // writer.formattedWrite!"%d is the ultimate %s."(3.14, "answer");
 }
-	*/
