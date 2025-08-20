@@ -4,6 +4,7 @@ import std.exception : collectException, collectExceptionMsg;
 import std.range : front, popFront;
 import std.meta : AliasSeq;
 import std.range.interfaces : inputRangeObject;
+import std.typecons : Nullable;
 
 import std2.format.exception : FormatException;
 import std2.format.formattest;
@@ -361,8 +362,41 @@ import std2.format.compilerhelpers;
     formatTest(c, "null");
 }
 
+// https://issues.dlang.org/show_bug.cgi?id=17269
+@safe unittest
+{
+    struct Foo
+    {
+        Nullable!string bar;
+    }
+
+    Foo f;
+    formatTest(f, "Foo(Nullable.null)");
+}
 
 __EOF__
+
+@safe pure unittest
+{
+    assert(collectExceptionMsg!FormatException(format("%p", null)).back == 'p');
+
+    //assertCTFEable!(
+    //{
+        formatTest(null, "null");
+    //});
+}
+
+@safe pure unittest
+{
+    assert(collectExceptionMsg!FormatException(format("%c", 5)).back == 'c');
+
+    assertCTFEable!(
+    {
+        formatTest(9, "9");
+        formatTest(10, "10");
+    });
+}
+
 
 @safe unittest
 {
@@ -383,27 +417,6 @@ __EOF__
     formatTest(S1(true),  "true");
     formatTest(S2(false), "S");
     formatTest(S2(true),  "S");
-}
-
-@safe pure unittest
-{
-    assert(collectExceptionMsg!FormatException(format("%p", null)).back == 'p');
-
-    assertCTFEable!(
-    {
-        formatTest(null, "null");
-    });
-}
-
-@safe pure unittest
-{
-    assert(collectExceptionMsg!FormatException(format("%c", 5)).back == 'c');
-
-    assertCTFEable!(
-    {
-        formatTest(9, "9");
-        formatTest(10, "10");
-    });
 }
 
 @safe unittest
@@ -581,6 +594,7 @@ __EOF__
     formatTest(S1(['c':1, 'd':2]), [`['c':1, 'd':2]`, `['d':2, 'c':1]`]);
     formatTest(S2(['c':1, 'd':2]), "S");
 }
+
 @system unittest
 {
     // https://issues.dlang.org/show_bug.cgi?id=5354
@@ -708,19 +722,6 @@ __EOF__
     () @trusted { u2.s = "hello"; } ();
     formatTest(u2, "hello");
 }
-
-// https://issues.dlang.org/show_bug.cgi?id=17269
-@safe unittest
-{
-    struct Foo
-    {
-        Nullable!string bar;
-    }
-
-    Foo f;
-    formatTest(f, "Foo(Nullable.null)");
-}
-
 
 
 @safe pure unittest
