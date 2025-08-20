@@ -948,7 +948,7 @@ if (is(T == class) && !is(T == enum))
 void formatValueImpl(Writer, T)(auto ref Writer w, T val, scope const ref FormatSpec f)
 if (is(T == interface) && !is(BuiltinTypeOf!T) && !is(T == enum))
 {
-    enforceValidFormatSpec!(T, char)(f);
+    enforceValidFormatSpec!(T)(f);
     if (val is null)
         put(w, "null");
     else

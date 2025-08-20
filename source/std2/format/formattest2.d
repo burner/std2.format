@@ -817,7 +817,6 @@ import std2.format.internal.write;
     }
 }
 
-	/+
 @system unittest
 {
     static interface IF1 { }
@@ -863,7 +862,6 @@ import std2.format.internal.write;
     assert(format("%f", KU1()) == "KU1");
     assert(format("%f", new KC1()) == "KC1");
 }
-+/
 
 // outside the unittest block, otherwise the FQN of the
 // class contains the line number of the unittest
@@ -1079,9 +1077,8 @@ version (StdUnittest)
 
     assert(w.data == "TestContainer(helloworld)", w.data);
 }
-	+/
++/
 
-/+
 // https://issues.dlang.org/show_bug.cgi?id=19003
 @safe unittest
 {
@@ -1102,7 +1099,6 @@ version (StdUnittest)
 
     format!"%s"(s);
 }
-	+/
 
 @safe pure unittest
 {
