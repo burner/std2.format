@@ -178,7 +178,7 @@ struct FormatSpec
     }+/
 
     /// The inner format string of a nested format specifier.
-    const(char)[] nested;
+    string nested;
 
     /**
        The separator of a nested format specifier.
@@ -186,28 +186,28 @@ struct FormatSpec
        `null` means, there is no separator. `empty`, but not `null`,
        means zero length separator.
      */
-    const(char)[] sep;
+    string sep;
 
     /// Contains the part of the format string, that has not yet been parsed.
-    const(char)[] trailing;
+    string trailing;
 
     /// Sequence `"["` inserted before each range or range like structure.
-    enum immutable(char)[] seqBefore = "[";
+    enum string seqBefore = "[";
 
     /// Sequence `"]"` inserted after each range or range like structure.
-    enum immutable(char)[] seqAfter = "]";
+    enum string seqAfter = "]";
 
     /**
        Sequence `":"` inserted between element key and element value of
        an associative array.
      */
-    enum immutable(char)[] keySeparator = ":";
+    enum string keySeparator = ":";
 
     /**
        Sequence `", "` inserted between elements of a range, a range like
        structure or the elements of an associative array.
      */
-    enum immutable(char)[] seqSeparator = ", ";
+    enum string seqSeparator = ", ";
 
     /**
        Creates a new `FormatSpec`.
@@ -218,7 +218,7 @@ struct FormatSpec
        Params:
            fmt = a $(MREF_ALTTEXT format string, std2.format)
      */
-    this(in char[] fmt) @safe pure
+    this(return scope string fmt) @safe pure scope
     {
         trailing = fmt;
     }
