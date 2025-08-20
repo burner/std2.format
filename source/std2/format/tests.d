@@ -737,3 +737,13 @@ __EOF__
     S* q = () @trusted { return cast(S*) 0xFFEECCAA; } ();
     formatTest(q, "FFEECCAA");
 }
+
+@safe pure unittest
+{
+    auto spec = singleSpec("%10.3e");
+    auto writer = appender!string();
+    writer.formatValue(42.0, spec);
+
+    assert(writer.data == " 4.200e+01");
+}
+

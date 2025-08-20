@@ -20,7 +20,11 @@ Source: $(PHOBOSSRC std2.format/spec.d)
 module std2.format.spec;
 
 import std.traits : Unqual;
+import std.exception : assertThrown;
+
 import std2.format.internal.write : formatValue;
+import std2.format.exception : FormatException;
+
 
 /**
 A general handler for format strings.
@@ -769,7 +773,6 @@ struct FormatSpec
     assertThrown!FormatException(f.writeUpToNextSpec(a));
 }
 
-/*
 @safe unittest
 {
     import std.array : appender;
@@ -796,7 +799,7 @@ struct FormatSpec
     assert(f.separators == 10);
     assert(f.width == 5);
     assert(f.precision == 4);
-}*/
+}
 
 @safe pure unittest
 {
@@ -905,25 +908,8 @@ FormatSpec singleSpec(string fmt) pure @safe
     return spec;
 }
 
-///
-/+
 @safe pure unittest
 {
-    import std.array : appender;
-    import std2.format.write : formatValue;
-
-    auto spec = singleSpec("%10.3e");
-    auto writer = appender!string();
-    writer.formatValue(42.0, spec);
-
-    assert(writer.data == " 4.200e+01");
-}+/
-
-@safe pure unittest
-{
-    import std.exception : assertThrown;
-    import std2.format.exception : FormatException;
-
     auto spec = singleSpec("%2.3e");
 
     assert(spec.trailing == "");
