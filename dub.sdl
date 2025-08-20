@@ -1,0 +1,8 @@
+name "format_perf"
+description "making std.format fast"
+authors "Robert Schadek"
+copyright "Copyright © 2025, Robert Schadek"
+license "boost"
+dflags "-preview=dip1000" "-preview=dtorfields" "-preview=fieldwise" "-preview=bitfields"
+//dflags "-d" "-ftime-trace" "-ftime-trace-file=$PACKAGE_DIR/trace.json" platform="ldc"
+//versions "StdUnittest"
