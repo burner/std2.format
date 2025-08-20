@@ -12,8 +12,6 @@
  */
 module std2.format.internal.write;
 
-//import std.format : FormatException, formatValue, NoOpSink;
-//import std.format : NoOpSink;
 import std2.format.noopsink;
 import core.exception : AssertError;
 import core.simd; // cannot be selective, because float4 might not be defined
@@ -22,12 +20,9 @@ import std.algorithm.searching : all, canFind;
 import std.array : appender;
 import std.conv : text, to;
 import std.exception : assertThrown, collectExceptionMsg, enforce;
-//import std.format : formattedWrite;
 import std2.format.exception : FormatException, enforceFmt;
 import std2.format.internal.floats : printFloat, isFloatSpec;
-//import std2.format.internal.write : hasToString, HasToStringResult;
 import std2.format.spec : FormatSpec, singleSpec;
-//import std2.format.write : formattedWrite, formatValue;
 import std2.format.internal.checkformatexception;
 import std.math.exponential : log2;
 import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
@@ -751,7 +746,7 @@ enum HasToStringResult
 package(std2.format) alias DScannerBug895 = int[256];
 package(std2.format) immutable bool hasPreviewIn = ((in DScannerBug895 a) { return __traits(isRef, a); })(DScannerBug895.init);
 
-template hasToString(T, Char)
+template hasToString(T)
 {
     static if (isPointer!T)
     {
@@ -764,7 +759,7 @@ template hasToString(T, Char)
             static struct S
             {
                 @disable this(this);
-                void put(scope Char s){}
+                void put(scope char s){}
             }
             S s;
             val.toString(s, f);
@@ -777,7 +772,7 @@ template hasToString(T, Char)
             static struct S
             {
                 @disable this(this);
-                void put(scope Char s){}
+                void put(char s){}
             }
             S s;
             val.toString(s);
@@ -785,7 +780,11 @@ template hasToString(T, Char)
     {
         enum hasToString = HasToStringResult.customPutWriter;
     }
-    else static if (is(typeof((T val) { FormatSpec f; val.toString((scope const(char)[] s){}, f); })))
+    else static if (is(typeof(
+		(T val) { 
+			FormatSpec f; 
+			val.toString((scope const(char)[] s){}, f); 
+		})))
     {
         enum hasToString = HasToStringResult.constCharSinkFormatSpec;
     }
@@ -833,13 +832,13 @@ template hasToString(T, Char)
         string toString() const { return "S"; }
     }
 
-	static assert(hasToString!(S2, char));
+	static assert(hasToString!(S2));
 }
 
 // object formatting with toString
 private void formatObject(Writer, T)(ref Writer w, ref T val, scope const ref FormatSpec f)
 {
-    enum overload = hasToString!(T, char);
+    enum overload = hasToString!(T);
 
     enum noop = is(Writer == NoOpSink);
 
@@ -902,7 +901,7 @@ if (is(T == class) && !is(T == enum))
         put(w, "null");
     else
     {
-        enum overload = hasToString!(T, char);
+        enum overload = hasToString!(T);
         with(HasToStringResult)
         static if ((is(T == immutable) || is(T == const) || is(T == shared)) && overload == none)
         {
@@ -958,7 +957,7 @@ if (is(T == interface) && !is(BuiltinTypeOf!T) && !is(T == enum))
             static assert(!__traits(isDisabled, T.toString), T.stringof ~
                 " cannot be formatted because its `toString` is marked with `@disable`");
 
-        static if (hasToString!(T, char) != HasToStringResult.none)
+        static if (hasToString!(T) != HasToStringResult.none)
         {
             formatObject(w, val, f);
         }
@@ -997,7 +996,7 @@ if ((is(T == struct) || is(T == union)) && !is(BuiltinTypeOf!T) && !is(T == enum
             " cannot be formatted because its `toString` is marked with `@disable`");
 
     enforceValidFormatSpec!(T)(f);
-    static if (hasToString!(T, char))
+    static if (hasToString!(T))
     {
         formatObject(w, val, f);
     }
@@ -1053,7 +1052,7 @@ if ((is(T == struct) || is(T == union)) && !is(BuiltinTypeOf!T) && !is(T == enum
 
 void enforceValidFormatSpec(T)(scope const ref FormatSpec f)
 {
-    enum overload = hasToString!(T, char);
+    enum overload = hasToString!(T);
     static if (
             overload != HasToStringResult.constCharSinkFormatSpec &&
             overload != HasToStringResult.constCharSinkFormatString &&

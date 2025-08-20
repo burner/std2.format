@@ -3,7 +3,7 @@ module std2.format.formattest2;
 import std.array : appender;
 import std.exception : assertThrown, collectExceptionMsg;
 import std.typecons : Nullable;
-import std.range : back, repeat, iota;
+import std.range : back, repeat, iota, isOutputRange;
 import std.math : log2;
 
 import std2.format.formatfunction;
@@ -581,7 +581,6 @@ import std2.format.internal.write;
     assert(result == "one (1), two (2)" || result == "two (2), one (1)");
 }
 
-/+
 @safe unittest
 {
     static struct A
@@ -667,30 +666,28 @@ import std2.format.internal.write;
 
     with(HasToStringResult)
     {
-        static assert(hasToString!(A, char) == customPutWriter);
-        static assert(hasToString!(B, char) == constCharSinkFormatSpec);
-        static assert(hasToString!(C, char) == constCharSinkFormatString);
-        static assert(hasToString!(D, char) == constCharSink);
-        static assert(hasToString!(E, char) == hasSomeToString);
-        static assert(hasToString!(F, char) == customPutWriterFormatSpec);
-        static assert(hasToString!(G, char) == customPutWriter);
-        static assert(hasToString!(H, char) == customPutWriterFormatSpec);
-        static assert(hasToString!(I, char) == customPutWriterFormatSpec);
-        static assert(hasToString!(J, char) == hasSomeToString
-            || hasToString!(J, char) == constCharSinkFormatSpec); // depends on -preview=rvaluerefparam
-        static assert(hasToString!(K, char) == constCharSinkFormatSpec);
-        static assert(hasToString!(L, char) == customPutWriterFormatSpec);
+        static assert(hasToString!(A) == customPutWriter);
+        static assert(hasToString!(B) == constCharSinkFormatSpec);
+        static assert(hasToString!(C) == constCharSinkFormatString);
+        static assert(hasToString!(D) == constCharSink);
+        static assert(hasToString!(E) == hasSomeToString);
+        static assert(hasToString!(F) == customPutWriterFormatSpec);
+        static assert(hasToString!(G) == customPutWriter);
+        static assert(hasToString!(H) == customPutWriterFormatSpec);
+        static assert(hasToString!(I) == customPutWriterFormatSpec);
+        static assert(hasToString!(J) == hasSomeToString
+            || hasToString!(J) == constCharSinkFormatSpec); // depends on -preview=rvaluerefparam
+        static assert(hasToString!(K) == constCharSinkFormatSpec);
+        static assert(hasToString!(L) == customPutWriterFormatSpec);
         static if (hasPreviewIn)
         {
-            static assert(hasToString!(M, char) == inCharSinkFormatSpec);
-            static assert(hasToString!(N, char) == inCharSinkFormatString);
-            static assert(hasToString!(O, char) == inCharSink);
+            static assert(hasToString!(M) == inCharSinkFormatSpec);
+            static assert(hasToString!(N) == inCharSinkFormatString);
+            static assert(hasToString!(O) == inCharSink);
         }
     }
 }
-+/
 
-/+
 // const toString methods
 @safe unittest
 {
@@ -777,49 +774,50 @@ import std2.format.internal.write;
 
     with(HasToStringResult)
     {
-        static assert(hasToString!(A, char) == customPutWriter);
-        static assert(hasToString!(B, char) == constCharSinkFormatSpec);
-        static assert(hasToString!(C, char) == constCharSinkFormatString);
-        static assert(hasToString!(D, char) == constCharSink);
-        static assert(hasToString!(E, char) == hasSomeToString);
-        static assert(hasToString!(F, char) == customPutWriterFormatSpec);
-        static assert(hasToString!(G, char) == customPutWriter);
-        static assert(hasToString!(H, char) == customPutWriterFormatSpec);
-        static assert(hasToString!(I, char) == customPutWriterFormatSpec);
-        static assert(hasToString!(J, char) == hasSomeToString
-            || hasToString!(J, char) == constCharSinkFormatSpec); // depends on -preview=rvaluerefparam
-        static assert(hasToString!(K, char) == constCharSinkFormatSpec);
-        static assert(hasToString!(L, char) == HasToStringResult.customPutWriterFormatSpec);
+        static assert(hasToString!(A) == customPutWriter);
+        static assert(hasToString!(B) == constCharSinkFormatSpec);
+        static assert(hasToString!(C) == constCharSinkFormatString);
+        static assert(hasToString!(D) == constCharSink);
+        static assert(hasToString!(E) == hasSomeToString);
+        static assert(hasToString!(F) == customPutWriterFormatSpec);
+        static assert(hasToString!(G) == customPutWriter);
+        static assert(hasToString!(H) == customPutWriterFormatSpec);
+        static assert(hasToString!(I) == customPutWriterFormatSpec);
+        static assert(hasToString!(J) == hasSomeToString
+            || hasToString!(J) == constCharSinkFormatSpec); // depends on -preview=rvaluerefparam
+        static assert(hasToString!(K) == constCharSinkFormatSpec);
+        static assert(hasToString!(L) == HasToStringResult.customPutWriterFormatSpec);
         static if (hasPreviewIn)
         {
-            static assert(hasToString!(M, char) == inCharSinkFormatSpec);
-            static assert(hasToString!(N, char) == inCharSinkFormatString);
-            static assert(hasToString!(O, char) == inCharSink);
+            static assert(hasToString!(M) == inCharSinkFormatSpec);
+            static assert(hasToString!(N) == inCharSinkFormatString);
+            static assert(hasToString!(O) == inCharSink);
         }
 
         // https://issues.dlang.org/show_bug.cgi?id=22873
-        static assert(hasToString!(inout(A), char) == customPutWriter);
-        static assert(hasToString!(inout(B), char) == constCharSinkFormatSpec);
-        static assert(hasToString!(inout(C), char) == constCharSinkFormatString);
-        static assert(hasToString!(inout(D), char) == constCharSink);
-        static assert(hasToString!(inout(E), char) == hasSomeToString);
-        static assert(hasToString!(inout(F), char) == customPutWriterFormatSpec);
-        static assert(hasToString!(inout(G), char) == customPutWriter);
-        static assert(hasToString!(inout(H), char) == customPutWriterFormatSpec);
-        static assert(hasToString!(inout(I), char) == customPutWriterFormatSpec);
-        static assert(hasToString!(inout(J), char) == hasSomeToString
-            || hasToString!(inout(J), char) == constCharSinkFormatSpec); // depends on -preview=rvaluerefparam
-        static assert(hasToString!(inout(K), char) == constCharSinkFormatSpec);
-        static assert(hasToString!(inout(L), char) == customPutWriterFormatSpec);
+        static assert(hasToString!(inout(A)) == customPutWriter);
+        static assert(hasToString!(inout(B)) == constCharSinkFormatSpec);
+        static assert(hasToString!(inout(C)) == constCharSinkFormatString);
+        static assert(hasToString!(inout(D)) == constCharSink);
+        static assert(hasToString!(inout(E)) == hasSomeToString);
+        static assert(hasToString!(inout(F)) == customPutWriterFormatSpec);
+        static assert(hasToString!(inout(G)) == customPutWriter);
+        static assert(hasToString!(inout(H)) == customPutWriterFormatSpec);
+        static assert(hasToString!(inout(I)) == customPutWriterFormatSpec);
+        static assert(hasToString!(inout(J)) == hasSomeToString
+            || hasToString!(inout(J)) == constCharSinkFormatSpec); // depends on -preview=rvaluerefparam
+        static assert(hasToString!(inout(K)) == constCharSinkFormatSpec);
+        static assert(hasToString!(inout(L)) == customPutWriterFormatSpec);
         static if (hasPreviewIn)
         {
-            static assert(hasToString!(inout(M), char) == inCharSinkFormatSpec);
-            static assert(hasToString!(inout(N), char) == inCharSinkFormatString);
-            static assert(hasToString!(inout(O), char) == inCharSink);
+            static assert(hasToString!(inout(M)) == inCharSinkFormatSpec);
+            static assert(hasToString!(inout(N)) == inCharSinkFormatString);
+            static assert(hasToString!(inout(O)) == inCharSink);
         }
     }
 }
 
+	/+
 @system unittest
 {
     static interface IF1 { }
