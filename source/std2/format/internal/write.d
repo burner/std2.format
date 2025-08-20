@@ -890,7 +890,7 @@ private void formatObject(Writer, T)(ref Writer w, ref T val, scope const ref Fo
 void formatValueImpl(Writer, T)(auto ref Writer w, T val, scope const ref FormatSpec f)
 if (is(T == class) && !is(T == enum))
 {
-    enforceValidFormatSpec!(T, char)(f);
+    enforceValidFormatSpec!(T)(f);
 
     // TODO: remove this check once `@disable override` deprecation cycle is finished
     static if (__traits(hasMember, T, "toString") && isSomeFunction!(val.toString))

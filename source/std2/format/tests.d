@@ -3,6 +3,7 @@ module std2.format.tests;
 import std.exception : collectException, collectExceptionMsg;
 import std.range : front, popFront;
 import std.meta : AliasSeq;
+import std.range.interfaces : inputRangeObject;
 
 import std2.format.exception : FormatException;
 import std2.format.formattest;
@@ -299,6 +300,68 @@ import std2.format.compilerhelpers;
     formatTest("%-(%s:%-(%s%)%|, %)", aa2, [`1:abcd, 2:efgh`, `2:efgh, 1:abcd`]);
 }
 
+@safe unittest
+{
+    // void[]
+    void[] val0;
+    formatTest(val0, "[]");
+
+    void[] val = cast(void[]) cast(ubyte[])[1, 2, 3];
+    formatTest(val, "[1, 2, 3]");
+
+    void[0] sval0 = [];
+    formatTest(sval0, "[]");
+
+    void[3] sval = () @trusted { return cast(void[3]) cast(ubyte[3])[1, 2, 3]; } ();
+    formatTest(sval, "[1, 2, 3]");
+}
+
+@safe unittest
+{
+    // const(T[]) -> const(T)[]
+    const short[] a = [1, 2, 3];
+    formatTest(a, "[1, 2, 3]");
+
+    struct S
+    {
+        const(int[]) arr;
+        alias arr this;
+    }
+
+    auto s = S([1,2,3]);
+    formatTest(s, "[1, 2, 3]");
+}
+
+@safe unittest
+{
+    // nested range formatting with array of string
+    formatTest("%({%(%02x %)}%| %)", ["test", "msg"],
+               `{74 65 73 74} {6d 73 67}`);
+}
+
+@safe pure unittest
+{
+    int[] a = [ 1, 3, 2 ];
+    formatTest("testing %(%s & %) embedded", a,
+               "testing 1 & 3 & 2 embedded");
+    formatTest("testing %((%s) %)) wyda3", a,
+               "testing (1) (3) (2) wyda3");
+
+    int[0] empt = [];
+    formatTest("(%s)", empt, "([])");
+}
+
+@system unittest
+{
+    // class range (https://issues.dlang.org/show_bug.cgi?id=5154)
+    auto c = inputRangeObject([1,2,3,4]);
+    formatTest(c, "[1, 2, 3, 4]");
+    assert(c.empty);
+    c = null;
+    formatTest(c, "null");
+}
+
+
 __EOF__
 
 @safe unittest
@@ -464,61 +527,10 @@ __EOF__
     formatTest(S!0b111([0, 1, 2]), "S");
 }
 
-@safe unittest
-{
-    // void[]
-    void[] val0;
-    formatTest(val0, "[]");
-
-    void[] val = cast(void[]) cast(ubyte[])[1, 2, 3];
-    formatTest(val, "[1, 2, 3]");
-
-    void[0] sval0 = [];
-    formatTest(sval0, "[]");
-
-    void[3] sval = () @trusted { return cast(void[3]) cast(ubyte[3])[1, 2, 3]; } ();
-    formatTest(sval, "[1, 2, 3]");
-}
-
-@safe unittest
-{
-    // const(T[]) -> const(T)[]
-    const short[] a = [1, 2, 3];
-    formatTest(a, "[1, 2, 3]");
-
-    struct S
-    {
-        const(int[]) arr;
-        alias arr this;
-    }
-
-    auto s = S([1,2,3]);
-    formatTest(s, "[1, 2, 3]");
-}
-
-@safe unittest
-{
-    // nested range formatting with array of string
-    formatTest("%({%(%02x %)}%| %)", ["test", "msg"],
-               `{74 65 73 74} {6d 73 67}`);
-}
-
 // https://issues.dlang.org/show_bug.cgi?id=18778
 @safe pure unittest
 {
     assert(format("%-(%1$s - %1$s, %)", ["A", "B", "C"]) == "A - A, B - B, C - C");
-}
-
-@safe pure unittest
-{
-    int[] a = [ 1, 3, 2 ];
-    formatTest("testing %(%s & %) embedded", a,
-               "testing 1 & 3 & 2 embedded");
-    formatTest("testing %((%s) %)) wyda3", a,
-               "testing (1) (3) (2) wyda3");
-
-    int[0] empt = [];
-    formatTest("(%s)", empt, "([])");
 }
 
 @safe unittest
@@ -569,17 +581,6 @@ __EOF__
     formatTest(S1(['c':1, 'd':2]), [`['c':1, 'd':2]`, `['d':2, 'c':1]`]);
     formatTest(S2(['c':1, 'd':2]), "S");
 }
-
-@system unittest
-{
-    // class range (https://issues.dlang.org/show_bug.cgi?id=5154)
-    auto c = inputRangeObject([1,2,3,4]);
-    formatTest(c, "[1, 2, 3, 4]");
-    assert(c.empty);
-    c = null;
-    formatTest(c, "null");
-}
-
 @system unittest
 {
     // https://issues.dlang.org/show_bug.cgi?id=5354
