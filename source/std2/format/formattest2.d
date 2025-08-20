@@ -1411,3 +1411,555 @@ version (StdUnittest)
     // This line doesn't compile, because 3.14 cannot be formatted with %d:
     // s = format!"%s is %d"("Pi", 3.14);
 }
+
+@safe pure unittest
+{
+    string s;
+    static assert(!__traits(compiles, {s = format!"%l"();}));     // missing arg
+    static assert(!__traits(compiles, {s = format!""(404);}));    // surplus arg
+    static assert(!__traits(compiles, {s = format!"%d"(4.03);})); // incompatible arg
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=20288
+@safe unittest
+{
+    string s = format("%,.2f", double.nan);
+    assert(s == "nan", s);
+
+    s = format("%,.2F", double.nan);
+    assert(s == "NAN", s);
+
+    s = format("%,.2f", -double.nan);
+    assert(s == "-nan", s);
+
+    s = format("%,.2F", -double.nan);
+    assert(s == "-NAN", s);
+
+    string g = format("^%13s$", "nan");
+    string h = "^          nan$";
+    assert(g == h, "\ngot:" ~ g ~ "\nexp:" ~ h);
+    string a = format("^%13,3.2f$", double.nan);
+    string b = format("^%13,3.2F$", double.nan);
+    string c = format("^%13,3.2f$", -double.nan);
+    string d = format("^%13,3.2F$", -double.nan);
+    assert(a == "^          nan$", "\ngot:'"~ a ~ "'\nexp:'^          nan$'");
+    assert(b == "^          NAN$", "\ngot:'"~ b ~ "'\nexp:'^          NAN$'");
+    assert(c == "^         -nan$", "\ngot:'"~ c ~ "'\nexp:'^         -nan$'");
+    assert(d == "^         -NAN$", "\ngot:'"~ d ~ "'\nexp:'^         -NAN$'");
+
+    a = format("^%-13,3.2f$", double.nan);
+    b = format("^%-13,3.2F$", double.nan);
+    c = format("^%-13,3.2f$", -double.nan);
+    d = format("^%-13,3.2F$", -double.nan);
+    assert(a == "^nan          $", "\ngot:'"~ a ~ "'\nexp:'^nan          $'");
+    assert(b == "^NAN          $", "\ngot:'"~ b ~ "'\nexp:'^NAN          $'");
+    assert(c == "^-nan         $", "\ngot:'"~ c ~ "'\nexp:'^-nan         $'");
+    assert(d == "^-NAN         $", "\ngot:'"~ d ~ "'\nexp:'^-NAN         $'");
+
+    a = format("^%+13,3.2f$", double.nan);
+    b = format("^%+13,3.2F$", double.nan);
+    c = format("^%+13,3.2f$", -double.nan);
+    d = format("^%+13,3.2F$", -double.nan);
+    assert(a == "^         +nan$", "\ngot:'"~ a ~ "'\nexp:'^         +nan$'");
+    assert(b == "^         +NAN$", "\ngot:'"~ b ~ "'\nexp:'^         +NAN$'");
+    assert(c == "^         -nan$", "\ngot:'"~ c ~ "'\nexp:'^         -nan$'");
+    assert(d == "^         -NAN$", "\ngot:'"~ d ~ "'\nexp:'^         -NAN$'");
+
+    a = format("^%-+13,3.2f$", double.nan);
+    b = format("^%-+13,3.2F$", double.nan);
+    c = format("^%-+13,3.2f$", -double.nan);
+    d = format("^%-+13,3.2F$", -double.nan);
+    assert(a == "^+nan         $", "\ngot:'"~ a ~ "'\nexp:'^+nan         $'");
+    assert(b == "^+NAN         $", "\ngot:'"~ b ~ "'\nexp:'^+NAN         $'");
+    assert(c == "^-nan         $", "\ngot:'"~ c ~ "'\nexp:'^-nan         $'");
+    assert(d == "^-NAN         $", "\ngot:'"~ d ~ "'\nexp:'^-NAN         $'");
+
+    a = format("^%- 13,3.2f$", double.nan);
+    b = format("^%- 13,3.2F$", double.nan);
+    c = format("^%- 13,3.2f$", -double.nan);
+    d = format("^%- 13,3.2F$", -double.nan);
+    assert(a == "^ nan         $", "\ngot:'"~ a ~ "'\nexp:'^ nan         $'");
+    assert(b == "^ NAN         $", "\ngot:'"~ b ~ "'\nexp:'^ NAN         $'");
+    assert(c == "^-nan         $", "\ngot:'"~ c ~ "'\nexp:'^-nan         $'");
+    assert(d == "^-NAN         $", "\ngot:'"~ d ~ "'\nexp:'^-NAN         $'");
+}
+
+///
+@safe pure unittest
+{
+    assert(format("Here are %d %s.", 3, "apples") == "Here are 3 apples.");
+
+    assert("Increase: %7.2f %%".format(17.4285) == "Increase:   17.43 %");
+}
+
+@safe pure unittest
+{
+    import std.exception : assertThrown;
+
+    //assertCTFEable!(
+    {
+        assert(format("foo") == "foo");
+        assert(format("foo%%") == "foo%");
+        assert(format("foo%s", 'C') == "fooC");
+        assert(format("%s foo", "bar") == "bar foo");
+        assert(format("%s foo %s", "bar", "abc") == "bar foo abc");
+        assert(format("foo %d", -123) == "foo -123");
+        assert(format("foo %d", 123) == "foo 123");
+
+        assertThrown!FormatException(format("foo %s"));
+        assertThrown!FormatException(format("foo %s", 123, 456));
+
+        assert(format("hel%slo%s%s%s", "world", -138, 'c', true) == "helworldlo-138ctrue");
+    }
+	//);
+
+    assert(is(typeof(format("happy")) == string));
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=16661
+@safe pure unittest
+{
+    assert(format("%.2f", 0.4) == "0.40");
+    assert("%02d".format(1) == "01");
+}
+
+@safe unittest
+{
+    int i;
+    string s;
+
+    s = format("hello world! %s %s %s%s%s", true, 57, 1_000_000_000, 'x', " foo");
+    assert(s == "hello world! true 57 1000000000x foo");
+
+    s = format("%s %A %s", 1.67, -1.28, float.nan);
+    assert(s == "1.67 -0X1.47AE147AE147BP+0 nan", s);
+
+    s = format("%x %X", 0x1234AF, 0xAFAFAFAF);
+    assert(s == "1234af AFAFAFAF");
+
+    s = format("%b %o", 0x1234AF, 0xAFAFAFAF);
+    assert(s == "100100011010010101111 25753727657");
+
+    s = format("%d %s", 0x1234AF, 0xAFAFAFAF);
+    assert(s == "1193135 2947526575");
+}
+
+@safe unittest
+{
+    import std.conv : octal;
+
+    string s;
+    int i;
+
+    s = format("%#06.*f", 2, 12.345);
+    assert(s == "012.35");
+
+    s = format("%#0*.*f", 6, 2, 12.345);
+    assert(s == "012.35");
+
+    s = format("%7.4g:", 12.678);
+    assert(s == "  12.68:");
+
+    s = format("%7.4g:", 12.678L);
+    assert(s == "  12.68:");
+
+	// TODO
+    // s = format("%04f|%05d|%#05x|%#5x", -4.0, -10, 1, 1);
+	// string exp = "-4.000000|-0010|0x001|  0x1";
+    // assert(s == exp, "\n" ~ s ~ "\n" ~ exp);
+
+    i = -10;
+    s = format("%d|%3d|%03d|%1d|%01.4f", i, i, i, i, cast(double) i);
+    assert(s == "-10|-10|-10|-10|-10.0000");
+
+    i = -5;
+    s = format("%d|%3d|%03d|%1d|%01.4f", i, i, i, i, cast(double) i);
+    assert(s == "-5| -5|-05|-5|-5.0000");
+
+    i = 0;
+    s = format("%d|%3d|%03d|%1d|%01.4f", i, i, i, i, cast(double) i);
+    assert(s == "0|  0|000|0|0.0000");
+
+    i = 5;
+    s = format("%d|%3d|%03d|%1d|%01.4f", i, i, i, i, cast(double) i);
+    assert(s == "5|  5|005|5|5.0000");
+
+    i = 10;
+    s = format("%d|%3d|%03d|%1d|%01.4f", i, i, i, i, cast(double) i);
+    assert(s == "10| 10|010|10|10.0000");
+
+    s = format("%.0d", 0);
+    assert(s == "0");
+
+    s = format("%.g", .34);
+    assert(s == "0.3");
+
+    s = format("%.0g", .34);
+    assert(s == "0.3");
+
+    s = format("%.2g", .34);
+    assert(s == "0.34");
+
+    s = format("%0.0008f", 1e-08);
+    assert(s == "0.00000001");
+
+    s = format("%0.0008f", 1e-05);
+    assert(s == "0.00001000");
+
+    s = "helloworld";
+    string r;
+    r = format("%.2s", s[0 .. 5]);
+    assert(r == "he");
+    r = format("%.20s", s[0 .. 5]);
+    assert(r == "hello");
+    r = format("%8s", s[0 .. 5]);
+    assert(r == "   hello");
+
+    byte[] arrbyte = new byte[4];
+    arrbyte[0] = 100;
+    arrbyte[1] = -99;
+    arrbyte[3] = 0;
+    r = format("%s", arrbyte);
+    assert(r == "[100, -99, 0, 0]");
+
+    ubyte[] arrubyte = new ubyte[4];
+    arrubyte[0] = 100;
+    arrubyte[1] = 200;
+    arrubyte[3] = 0;
+    r = format("%s", arrubyte);
+    assert(r == "[100, 200, 0, 0]");
+
+    short[] arrshort = new short[4];
+    arrshort[0] = 100;
+    arrshort[1] = -999;
+    arrshort[3] = 0;
+    r = format("%s", arrshort);
+    assert(r == "[100, -999, 0, 0]");
+
+    ushort[] arrushort = new ushort[4];
+    arrushort[0] = 100;
+    arrushort[1] = 20_000;
+    arrushort[3] = 0;
+    r = format("%s", arrushort);
+    assert(r == "[100, 20000, 0, 0]");
+
+    int[] arrint = new int[4];
+    arrint[0] = 100;
+    arrint[1] = -999;
+    arrint[3] = 0;
+    r = format("%s", arrint);
+    assert(r == "[100, -999, 0, 0]");
+
+    long[] arrlong = new long[4];
+    arrlong[0] = 100;
+    arrlong[1] = -999;
+    arrlong[3] = 0;
+    r = format("%s", arrlong);
+    assert(r == "[100, -999, 0, 0]");
+
+    ulong[] arrulong = new ulong[4];
+    arrulong[0] = 100;
+    arrulong[1] = 999;
+    arrulong[3] = 0;
+    r = format("%s", arrulong);
+    assert(r == "[100, 999, 0, 0]");
+
+    string[] arr2 = new string[4];
+    arr2[0] = "hello";
+    arr2[1] = "world";
+    arr2[3] = "foo";
+    r = format("%s", arr2);
+    assert(r == `["hello", "world", "", "foo"]`);
+
+    r = format("%.8d", 7);
+    assert(r == "00000007");
+    r = format("%.8x", 10);
+    assert(r == "0000000a");
+
+    r = format("%-3d", 7);
+    assert(r == "7  ");
+
+    r = format("%-1*d", 4, 3);
+    assert(r == "3   ");
+
+    r = format("%*d", -3, 7);
+    assert(r == "7  ");
+
+    r = format("%.*d", -3, 7);
+    assert(r == "7");
+
+    r = format("%-1.*f", 2, 3.1415);
+    assert(r == "3.14");
+
+    r = format("abc"c);
+    assert(r == "abc");
+
+    // Empty static character arrays work as well
+    const char[0] cempty;
+    assert(format("test%spath", cempty) == "testpath");
+    const wchar[0] wempty;
+    assert(format("test%spath", wempty) == "testpath");
+    const dchar[0] dempty;
+    assert(format("test%spath", dempty) == "testpath");
+
+    void* p = () @trusted { return cast(void*) 0xDEADBEEF; } ();
+    r = format("%s", p);
+    assert(r == "DEADBEEF");
+
+    r = format("%#x", 0xabcd);
+    assert(r == "0xabcd");
+    r = format("%#X", 0xABCD);
+    assert(r == "0XABCD");
+
+    r = format("%#o", octal!12345);
+    assert(r == "012345");
+    r = format("%o", 9);
+    assert(r == "11");
+    r = format("%#o", 0);   // https://issues.dlang.org/show_bug.cgi?id=15663
+    assert(r == "0");
+
+    r = format("%+d", 123);
+    assert(r == "+123");
+    r = format("%+d", -123);
+    assert(r == "-123");
+    r = format("% d", 123);
+    assert(r == " 123");
+    r = format("% d", -123);
+    assert(r == "-123");
+
+    r = format("%%");
+    assert(r == "%");
+
+    r = format("%d", true);
+    assert(r == "1");
+    r = format("%d", false);
+    assert(r == "0");
+
+    r = format("%d", 'a');
+    assert(r == "97");
+    wchar wc = 'a';
+    r = format("%d", wc);
+    assert(r == "97");
+    dchar dc = 'a';
+    r = format("%d", dc);
+    assert(r == "97");
+
+    byte b = byte.max;
+    r = format("%x", b);
+    assert(r == "7f");
+    r = format("%x", ++b);
+    assert(r == "80");
+    r = format("%x", ++b);
+    assert(r == "81");
+
+    short sh = short.max;
+    r = format("%x", sh);
+    assert(r == "7fff");
+    r = format("%x", ++sh);
+    assert(r == "8000");
+    r = format("%x", ++sh);
+    assert(r == "8001");
+
+    i = int.max;
+    r = format("%x", i);
+    assert(r == "7fffffff");
+    r = format("%x", ++i);
+    assert(r == "80000000");
+    r = format("%x", ++i);
+    assert(r == "80000001");
+
+    r = format("%x", 10);
+    assert(r == "a");
+    r = format("%X", 10);
+    assert(r == "A");
+    r = format("%x", 15);
+    assert(r == "f");
+    r = format("%X", 15);
+    assert(r == "F");
+
+    Object c = null;
+    r = () @trusted { return format("%s", c); } ();
+    assert(r == "null");
+
+    enum TestEnum
+    {
+        Value1, Value2
+    }
+    r = format("%s", TestEnum.Value2);
+    assert(r == "Value2");
+
+    immutable(char[5])[int] aa = ([3:"hello", 4:"betty"]);
+    r = () @trusted { return format("%s", aa.values); } ();
+    assert(r == `["hello", "betty"]` || r == `["betty", "hello"]`);
+    r = format("%s", aa);
+    assert(r == `[3:"hello", 4:"betty"]` || r == `[4:"betty", 3:"hello"]`);
+
+    static const dchar[] ds = ['a','b'];
+    for (int j = 0; j < ds.length; ++j)
+    {
+        r = format(" %d", ds[j]);
+        if (j == 0)
+            assert(r == " 97");
+        else
+            assert(r == " 98");
+    }
+
+    r = format(">%14d<, %s", 15, [1,2,3]);
+    assert(r == ">            15<, [1, 2, 3]");
+
+    assert(format("%8s", "bar") == "     bar");
+    assert(format("%8s", "b\u00e9ll\u00f4") == "   b\u00e9ll\u00f4");
+}
+
+@safe unittest
+{
+    //import std.exception : assertCTFEable;
+
+    //assertCTFEable!(
+    {
+        auto tmp = format("%,d", 1000);
+        assert(tmp == "1,000", "'" ~ tmp ~ "'");
+
+        tmp = format("%,?d", 'z', 1234567);
+        assert(tmp == "1z234z567", "'" ~ tmp ~ "'");
+
+        tmp = format("%10,?d", 'z', 1234567);
+        assert(tmp == " 1z234z567", "'" ~ tmp ~ "'");
+
+        tmp = format("%11,2?d", 'z', 1234567);
+        assert(tmp == " 1z23z45z67", "'" ~ tmp ~ "'");
+
+        tmp = format("%11,*?d", 2, 'z', 1234567);
+        assert(tmp == " 1z23z45z67", "'" ~ tmp ~ "'");
+
+        tmp = format("%11,*d", 2, 1234567);
+        assert(tmp == " 1,23,45,67", "'" ~ tmp ~ "'");
+
+        tmp = format("%11,2d", 1234567);
+        assert(tmp == " 1,23,45,67", "'" ~ tmp ~ "'");
+    }
+	//);
+}
+
+@safe unittest
+{
+    auto tmp = format("%,f", 1000.0);
+    assert(tmp == "1,000.000000", "'" ~ tmp ~ "'");
+
+    tmp = format("%,f", 1234567.891011);
+    assert(tmp == "1,234,567.891011", "'" ~ tmp ~ "'");
+
+    tmp = format("%,f", -1234567.891011);
+    assert(tmp == "-1,234,567.891011", "'" ~ tmp ~ "'");
+
+    tmp = format("%,2f", 1234567.891011);
+    assert(tmp == "1,23,45,67.891011", "'" ~ tmp ~ "'");
+
+    tmp = format("%18,f", 1234567.891011);
+    assert(tmp == "  1,234,567.891011", "'" ~ tmp ~ "'");
+
+    tmp = format("%18,?f", '.', 1234567.891011);
+    assert(tmp == "  1.234.567.891011", "'" ~ tmp ~ "'");
+
+    tmp = format("%,?.3f", 'ä', 1234567.891011);
+    assert(tmp == "1ä234ä567.891", "'" ~ tmp ~ "'");
+
+    tmp = format("%,*?.3f", 1, 'ä', 1234567.891011);
+    assert(tmp == "1ä2ä3ä4ä5ä6ä7.891", "'" ~ tmp ~ "'");
+
+    tmp = format("%,4?.3f", '_', 1234567.891011);
+    assert(tmp == "123_4567.891", "'" ~ tmp ~ "'");
+
+    tmp = format("%12,3.3f", 1234.5678);
+    assert(tmp == "   1,234.568", "'" ~ tmp ~ "'");
+
+    tmp = format("%,e", 3.141592653589793238462);
+    assert(tmp == "3.141593e+00", "'" ~ tmp ~ "'");
+
+    tmp = format("%15,e", 3.141592653589793238462);
+    assert(tmp == "   3.141593e+00", "'" ~ tmp ~ "'");
+
+    tmp = format("%15,e", -3.141592653589793238462);
+    assert(tmp == "  -3.141593e+00", "'" ~ tmp ~ "'");
+
+    tmp = format("%.4,*e", 2, 3.141592653589793238462);
+    assert(tmp == "3.1416e+00", "'" ~ tmp ~ "'");
+
+    tmp = format("%13.4,*e", 2, 3.141592653589793238462);
+    assert(tmp == "   3.1416e+00", "'" ~ tmp ~ "'");
+
+    tmp = format("%,.0f", 3.14);
+    assert(tmp == "3", "'" ~ tmp ~ "'");
+
+    tmp = format("%3,g", 1_000_000.123456);
+    assert(tmp == "1e+06", "'" ~ tmp ~ "'");
+
+    tmp = format("%19,?f", '.', -1234567.891011);
+    assert(tmp == "  -1.234.567.891011", "'" ~ tmp ~ "'");
+}
+
+// Test for multiple indexes
+@safe unittest
+{
+    auto tmp = format("%2:5$s", 1, 2, 3, 4, 5);
+    assert(tmp == "2345", tmp);
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=18047
+@safe unittest
+{
+    auto cmp = "     123,456";
+    assert(cmp.length == 12, format("%d", cmp.length));
+    auto tmp = format("%12,d", 123456);
+    assert(tmp.length == 12, format("%d", tmp.length));
+
+    assert(tmp == cmp, "'" ~ tmp ~ "'");
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=17459
+@safe unittest
+{
+    auto cmp = "100";
+    auto tmp  = format("%0d", 100);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0100";
+    tmp  = format("%04d", 100);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0,000,000,100";
+    tmp  = format("%012,3d", 100);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0,000,001,000";
+    tmp = format("%012,3d", 1_000);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0,000,100,000";
+    tmp = format("%012,3d", 100_000);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0,001,000,000";
+    tmp = format("%012,3d", 1_000_000);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0,100,000,000";
+    tmp = format("%012,3d", 100_000_000);
+    assert(tmp == cmp, tmp);
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=17459
+@safe unittest
+{
+    auto cmp = "100,000";
+    auto tmp  = format("%06,d", 100_000);
+    assert(tmp == cmp, tmp);
+
+    cmp = "100,000";
+    tmp  = format("%07,d", 100_000);
+    assert(tmp == cmp, tmp);
+
+    cmp = "0,100,000";
+    tmp  = format("%08,d", 100_000);
+    assert(tmp == cmp, tmp);
+}
