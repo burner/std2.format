@@ -28,6 +28,7 @@ import std2.format.internal.floats : printFloat, isFloatSpec;
 //import std2.format.internal.write : hasToString, HasToStringResult;
 import std2.format.spec : FormatSpec, singleSpec;
 //import std2.format.write : formattedWrite, formatValue;
+import std2.format.internal.checkformatexception;
 import std.math.exponential : log2;
 import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
 import std.math.operations : nextUp;
@@ -1934,8 +1935,8 @@ uint formattedWrite(Writer, Args...)(auto ref Writer w, const string fmt, Args a
 uint formattedWrite(alias fmt, Writer, Args...)(auto ref Writer w, Args args)
 if (isSomeString!(typeof(fmt)))
 {
-    //alias e = checkFormatException!(fmt, Args);
-    //static assert(!e, e);
+    alias e = checkFormatException!(fmt, Args);
+    static assert(!e, e);
     return .formattedWrite(w, fmt, args);
 }
 
