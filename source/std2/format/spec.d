@@ -819,8 +819,8 @@ struct FormatSpec
     auto spec = singleSpec("%2.5f");
     auto res = spec.toString();
     // make sure the address exists, then skip it
-    //assert(res.canFind("address"));
-    //assert(res.findSplitBefore("width")[1] == expected);
+    assert(res.canFind("address"));
+    assert(res.findSplitBefore("width")[1] == expected);
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=15348
