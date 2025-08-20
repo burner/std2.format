@@ -823,6 +823,18 @@ template hasToString(T, Char)
     }
 }
 
+@safe pure unittest 
+{
+    struct S2
+    {
+        bool val;
+        alias val this;
+        string toString() const { return "S"; }
+    }
+
+	static assert(hasToString!(S2, char));
+}
+
 // object formatting with toString
 private void formatObject(Writer, T)(ref Writer w, ref T val, scope const ref FormatSpec f)
 {

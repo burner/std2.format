@@ -1,27 +1,68 @@
 module std2.format.tests;
 
+import std.exception : collectException, collectExceptionMsg;
+import std2.format.exception : FormatException;
 import std2.format.formattest;
-
-__EOF__
-
-@safe pure unittest
-{
-    assert(collectExceptionMsg!FormatException(format("%p", null)).back == 'p');
-
-    assertCTFEable!(
-    {
-        formatTest(null, "null");
-    });
-}
+import std2.format.spec;
+import std2.format.compilerhelpers;
 
 @safe pure unittest
 {
-    assertCTFEable!(
-    {
+    //assertCTFEable!( TODO
+    //{
         formatTest(false, "false");
         formatTest(true,  "true");
-    });
+    //});
 }
+
+@safe pure unittest
+{
+    //assertCTFEable!(
+    //{
+        formatTest(byte.min, "-128");
+        formatTest(byte.max, "127");
+        formatTest(short.min, "-32768");
+        formatTest(short.max, "32767");
+        formatTest(int.min, "-2147483648");
+        formatTest(int.max, "2147483647");
+        formatTest(long.min, "-9223372036854775808");
+        formatTest(long.max, "9223372036854775807");
+
+        formatTest(ubyte.min, "0");
+        formatTest(ubyte.max, "255");
+        formatTest(ushort.min, "0");
+        formatTest(ushort.max, "65535");
+        formatTest(uint.min, "0");
+        formatTest(uint.max, "4294967295");
+        formatTest(ulong.min, "0");
+        formatTest(ulong.max, "18446744073709551615");
+    //};
+}
+
+@safe pure unittest
+{
+    formatTest(byte.min, "-128");
+    formatTest(short.min, "-32768");
+    formatTest(int.min, "-2147483648");
+    formatTest(long.min, "-9223372036854775808");
+}
+
+@safe unittest
+{
+    //Little Endian
+    formatTest("%-r", cast( char)'c', ['c'         ]);
+    formatTest("%-r", cast(wchar)'c', ['c', 0      ]);
+    formatTest("%-r", cast(dchar)'c', ['c', 0, 0, 0]);
+    formatTest("%-r", '本', ['\x2c', '\x67'] );
+
+    //Big Endian
+    formatTest("%+r", cast( char)'c', [         'c']);
+    formatTest("%+r", cast(wchar)'c', [0,       'c']);
+    formatTest("%+r", cast(dchar)'c', [0, 0, 0, 'c']);
+    formatTest("%+r", '本', ['\x67', '\x2c']);
+}
+
+__EOF__
 
 @safe unittest
 {
@@ -46,25 +87,11 @@ __EOF__
 
 @safe pure unittest
 {
+    assert(collectExceptionMsg!FormatException(format("%p", null)).back == 'p');
+
     assertCTFEable!(
     {
-        formatTest(byte.min, "-128");
-        formatTest(byte.max, "127");
-        formatTest(short.min, "-32768");
-        formatTest(short.max, "32767");
-        formatTest(int.min, "-2147483648");
-        formatTest(int.max, "2147483647");
-        formatTest(long.min, "-9223372036854775808");
-        formatTest(long.max, "9223372036854775807");
-
-        formatTest(ubyte.min, "0");
-        formatTest(ubyte.max, "255");
-        formatTest(ushort.min, "0");
-        formatTest(ushort.max, "65535");
-        formatTest(uint.min, "0");
-        formatTest(uint.max, "4294967295");
-        formatTest(ulong.min, "0");
-        formatTest(ulong.max, "18446744073709551615");
+        formatTest(null, "null");
     });
 }
 
@@ -97,15 +124,6 @@ __EOF__
     formatTest(S1(10), "10");
     formatTest(S2(10), "S");
 }
-
-@safe pure unittest
-{
-    formatTest(byte.min, "-128");
-    formatTest(short.min, "-32768");
-    formatTest(int.min, "-2147483648");
-    formatTest(long.min, "-9223372036854775808");
-}
-
 
 @safe pure unittest
 {
@@ -166,21 +184,6 @@ __EOF__
 
     formatTest(S1('c'), "c");
     formatTest(S2('c'), "S");
-}
-
-@safe unittest
-{
-    //Little Endian
-    formatTest("%-r", cast( char)'c', ['c'         ]);
-    formatTest("%-r", cast(wchar)'c', ['c', 0      ]);
-    formatTest("%-r", cast(dchar)'c', ['c', 0, 0, 0]);
-    formatTest("%-r", '本', ['\x2c', '\x67'] );
-
-    //Big Endian
-    formatTest("%+r", cast( char)'c', [         'c']);
-    formatTest("%+r", cast(wchar)'c', [0,       'c']);
-    formatTest("%+r", cast(dchar)'c', [0, 0, 0, 'c']);
-    formatTest("%+r", '本', ['\x67', '\x2c']);
 }
 
 @safe unittest

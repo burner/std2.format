@@ -121,7 +121,6 @@ void assertCTFEable(alias dg)()
     cast(void) dg();
 }
 
-
 real nextUp(real x) @trusted pure nothrow @nogc
 {
     import std.math.traits : floatTraits, RealFormat, MANTISSA_MSB, MANTISSA_LSB;
