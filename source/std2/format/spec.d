@@ -20,6 +20,7 @@ Source: $(PHOBOSSRC std2.format/spec.d)
 module std2.format.spec;
 
 import std.traits : Unqual;
+import std2.format.internal.write : formatValue;
 
 /**
 A general handler for format strings.
@@ -155,7 +156,7 @@ struct FormatSpec
         bool flSeparator;
 
         // Fake field to allow compilation
-        ubyte allFlags;
+        //ubyte allFlags;
     //}
     /+else
     {
@@ -289,7 +290,7 @@ struct FormatSpec
         }
         else
         {
-            allFlags = 0;
+            //allFlags = 0;
         }
 
         width = 0;
@@ -637,8 +638,6 @@ struct FormatSpec
     void toString(OutputRange)(ref OutputRange writer) const
     if (isOutputRange!(OutputRange, char))
     {
-        /*import std2.format.write : formatValue;
-
         auto s = singleSpec("%s");
 
         put(writer, "address = ");
@@ -672,7 +671,6 @@ struct FormatSpec
         put(writer, "\ntrailing = ");
         formatValue(writer, trailing, s);
         put(writer, '\n');
-		*/
     }
 }
 
