@@ -3,7 +3,7 @@
 		"Robert Schadek"
 	],
 	"dflags-ldc": ["-d", "-ftime-trace", "-ftime-trace-file=$PACKAGE_DIR/trace.json"],
-	"dflags": ["-preview=dip1000", "-preview=dtorfields", "-preview=fieldwise"],
+	"dflags": ["-preview=dip1000", "-preview=dtorfields", "-preview=fieldwise", "-preview=bitfields"],
 	"versions": ["StdUnittest", ],
 	"copyright": "Copyright © 2025, Robert Schadek",
 	"description": "making std.format fast",
