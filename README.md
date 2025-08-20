@@ -10,7 +10,7 @@ Some floating point things and (class|struct).toString fail.
 import std2.format;
 
 void main() {
-    string s = format("Hello %s %s", "World" 1337);
+    string s = format("Hello %s %s", "World", 1337);
     assert(s == "Hello World 1337");
 }
 ```
