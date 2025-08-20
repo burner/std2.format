@@ -1216,6 +1216,7 @@ if (!is(StringTypeOf!T) && !is(CharTypeOf!T) || is(T == enum))
     formatValue(w, val, f);
 }
 
+
 // Fix for https://issues.dlang.org/show_bug.cgi?id=1591
 int getNthInt(string kind, A...)(uint index, A args)
 {
