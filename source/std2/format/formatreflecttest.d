@@ -9,13 +9,11 @@ import std.traits : FloatingPointTypeOf;
 
 import std2.format.internal.write;
 
-version (StdUnittest)
 private void formatReflectTest(T)(ref T val, string fmt, string formatted, string fn = __FILE__, size_t ln = __LINE__)
 {
     formatReflectTest(val, fmt, [formatted], fn, ln);
 }
 
-version (StdUnittest)
 private void formatReflectTest(T)(ref T val, string fmt, string[] formatted, string fn = __FILE__, size_t ln = __LINE__)
 {
     auto w = appender!string();
