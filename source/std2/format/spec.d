@@ -45,13 +45,9 @@ This handler centers around the function $(LREF writeUpToNextSpec),
 which parses the $(MREF_ALTTEXT format string, std2.format) until the
 next format specifier is found. After the call, it provides
 information about this format specifier in its numerous variables.
-
-Params:
-    Char = the character type of the format string
  */
 struct FormatSpec
 {
-
     /**
        Special value for `width`, `precision` and `separators`.
 
@@ -144,100 +140,91 @@ struct FormatSpec
     */
     ushort indexEnd;
 
-	/+
+	/// stores the below flags (fl prefix)
+	private ubyte flags;
+
+    /// The format specifier contained a `','`.
+	bool flSeparator() @property const @safe pure scope {
+		return testBit(this.flags, 7);
+	}
+
+	/// ditto
+	void flSeparator(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 7, b);
+	}
+
+    /// The format specifier contained a `'='`.
+	bool flEqual() @property const @safe pure scope {
+		return testBit(this.flags, 6);
+	}
+
+	/// ditto
+	void flEqual(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 6, b);
+	}
+
+    /// The format specifier contained a `'#'`.
+	bool flHash() @property const @safe pure scope {
+		return testBit(this.flags, 5);
+	}
+
+	/// ditto
+	void flHash(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 5, b);
+	}
+
+    /// The format specifier contained a `'+'`.
+	bool flPlus() @property const @safe pure scope {
+		return testBit(this.flags, 4);
+	}
+
+	/// ditto
+	void flPlus(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 4, b);
+	}
+
+    /// The format specifier contained a space.
+	bool flSpace() @property const @safe pure scope {
+		return testBit(this.flags, 3);
+	}
+
+	/// ditto
+	void flSpace(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 3, b);
+	}
+
+    /// The format specifier contained a `'0'`.
+	bool flZero() @property const @safe pure scope {
+		return testBit(this.flags, 2);
+	}
+
+	/// ditto
+	void flZero(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 2, b);
+	}
+
+    /// The format specifier contained a `'-'`.
+	bool flDash() @property const @safe pure scope {
+		return testBit(this.flags, 1);
+	}
+
+	/// ditto
+	void flDash(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 1, b);
+	}
+
     /**
        The separator charactar is supplied at runtime.
 
        _Default: false.
      */
-    bool dynamicSeparatorChar = false;
-
-    /// The format specifier contained a `'-'`.
-    bool flDash;
-
-    /// The format specifier contained a `'0'`.
-    bool flZero;
-
-    /// The format specifier contained a space.
-    bool flSpace;
-
-    /// The format specifier contained a `'+'`.
-    bool flPlus;
-
-    /// The format specifier contained a `'#'`.
-    bool flHash;
-
-    /// The format specifier contained a `'='`.
-    bool flEqual;
-
-    /// The format specifier contained a `','`.
-    bool flSeparator;
-	+/
-
-	ubyte flags;
-
-	bool flSeparator() @property const @safe pure scope {
-		return testBit(this.flags, 7);
-	}
-
-	void flSeparator(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 7, b);
-	}
-
-	bool flEqual() @property const @safe pure scope {
-		return testBit(this.flags, 6);
-	}
-
-	void flEqual(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 6, b);
-	}
-
-	bool flHash() @property const @safe pure scope {
-		return testBit(this.flags, 5);
-	}
-
-	void flHash(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 5, b);
-	}
-
-	bool flPlus() @property const @safe pure scope {
-		return testBit(this.flags, 4);
-	}
-
-	void flPlus(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 4, b);
-	}
-
-	bool flSpace() @property const @safe pure scope {
-		return testBit(this.flags, 3);
-	}
-
-	void flSpace(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 3, b);
-	}
-
-	bool flZero() @property const @safe pure scope {
-		return testBit(this.flags, 2);
-	}
-
-	void flZero(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 2, b);
-	}
-
 	bool dynamicSeparatorChar() @property const @safe pure scope {
 		return testBit(this.flags, 0);
 	}
 
+	// ditto
 	void dynamicSeparatorChar(bool b) @property @safe pure scope {
 		this.flags = setBit(this.flags, 0, b);
-	}
-
-	bool flDash() @property const @safe pure scope {
-		return testBit(this.flags, 1);
-	}
-
-	void flDash(bool b) @property @safe pure scope {
-		this.flags = setBit(this.flags, 1, b);
 	}
 
     /**
