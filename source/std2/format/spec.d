@@ -19,12 +19,24 @@ Source: $(PHOBOSSRC std2.format/spec.d)
  */
 module std2.format.spec;
 
-import std.traits : Unqual;
+import std.algorithm.searching : startsWith;
+import std.ascii : isDigit;
+import std.conv : parse, text, to;
 import std.exception : assertThrown;
+import std.range.primitives;
+import std.traits : Unqual;
 
 import std2.format.internal.write : formatValue;
 import std2.format.exception : FormatException;
 
+private bool testBit(ubyte value, int idx) @safe pure {
+	ubyte bitmask = cast(ubyte)(1 << idx);
+	return (value & bitmask) > 0;
+}
+
+private ubyte setBit(ubyte bitfield, int idx, bool value) @safe pure {
+    return cast(ubyte)(cast(ubyte)(bitfield) ^ (-cast(ubyte)(value) ^ cast(ubyte)(bitfield)) & ( 1UL << idx));
+}
 
 /**
 A general handler for format strings.
@@ -39,10 +51,53 @@ Params:
  */
 struct FormatSpec
 {
-    import std.algorithm.searching : startsWith;
-    import std.ascii : isDigit;
-    import std.conv : parse, text, to;
-    import std.range.primitives;
+
+    /**
+       Special value for `width`, `precision` and `separators`.
+
+       It flags that these values will be passed at runtime through
+       variadic arguments.
+     */
+    enum int DYNAMIC = int.max;
+
+    /**
+       Special value for `precision` and `separators`.
+
+       It flags that these values have not been specified.
+     */
+    enum int UNSPECIFIED = DYNAMIC - 1;
+
+    /// Sequence `"["` inserted before each range or range like structure.
+    enum string seqBefore = "[";
+
+    /// Sequence `"]"` inserted after each range or range like structure.
+    enum string seqAfter = "]";
+
+    /**
+       Sequence `":"` inserted between element key and element value of
+       an associative array.
+     */
+    enum string keySeparator = ":";
+
+    /**
+       Sequence `", "` inserted between elements of a range, a range like
+       structure or the elements of an associative array.
+     */
+    enum string seqSeparator = ", ";
+
+    /// The inner format string of a nested format specifier.
+    string nested;
+
+    /**
+       The separator of a nested format specifier.
+
+       `null` means, there is no separator. `empty`, but not `null`,
+       means zero length separator.
+     */
+    string sep;
+
+    /// Contains the part of the format string, that has not yet been parsed.
+    string trailing;
 
     /**
        Minimum width.
@@ -67,40 +122,11 @@ struct FormatSpec
     int separators = UNSPECIFIED;
 
     /**
-       The separator charactar is supplied at runtime.
-
-       _Default: false.
-     */
-    bool dynamicSeparatorChar = false;
-
-    /**
        Character to use as separator.
 
        _Default: `','`.
      */
     dchar separatorChar = ',';
-
-    /**
-       Special value for `width`, `precision` and `separators`.
-
-       It flags that these values will be passed at runtime through
-       variadic arguments.
-     */
-    enum int DYNAMIC = int.max;
-
-    /**
-       Special value for `precision` and `separators`.
-
-       It flags that these values have not been specified.
-     */
-    enum int UNSPECIFIED = DYNAMIC - 1;
-
-    /**
-       The format character.
-
-       _Default: `'s'`.
-     */
-    char spec = 's';
 
     /**
        Index of the argument for positional parameters.
@@ -118,83 +144,109 @@ struct FormatSpec
     */
     ushort indexEnd;
 
-    //version (StdDdoc)
-    //{
-        /// The format specifier contained a `'-'`.
-        bool flDash;
+	/+
+    /**
+       The separator charactar is supplied at runtime.
 
-        /// The format specifier contained a `'0'`.
-        bool flZero;
+       _Default: false.
+     */
+    bool dynamicSeparatorChar = false;
 
-        /// The format specifier contained a space.
-        bool flSpace;
+    /// The format specifier contained a `'-'`.
+    bool flDash;
 
-        /// The format specifier contained a `'+'`.
-        bool flPlus;
+    /// The format specifier contained a `'0'`.
+    bool flZero;
 
-        /// The format specifier contained a `'#'`.
-        bool flHash;
+    /// The format specifier contained a space.
+    bool flSpace;
 
-        /// The format specifier contained a `'='`.
-        bool flEqual;
+    /// The format specifier contained a `'+'`.
+    bool flPlus;
 
-        /// The format specifier contained a `','`.
-        bool flSeparator;
+    /// The format specifier contained a `'#'`.
+    bool flHash;
 
-        // Fake field to allow compilation
-        //ubyte allFlags;
-    //}
-    /+else
-    {
-        union
-        {
-            import std.bitmanip : bitfields;
-		/*
-            mixin(bitfields!(
-                        bool, "flDash", 1,
-                        bool, "flZero", 1,
-                        bool, "flSpace", 1,
-                        bool, "flPlus", 1,
-                        bool, "flHash", 1,
-                        bool, "flEqual", 1,
-                        bool, "flSeparator", 1,
-                        ubyte, "", 1));
-            ubyte allFlags;
-			*/
-        }
-    }+/
+    /// The format specifier contained a `'='`.
+    bool flEqual;
 
-    /// The inner format string of a nested format specifier.
-    string nested;
+    /// The format specifier contained a `','`.
+    bool flSeparator;
+	+/
+
+	ubyte flags;
+
+	bool flSeparator() @property const @safe pure scope {
+		return testBit(this.flags, 7);
+	}
+
+	void flSeparator(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 7, b);
+	}
+
+	bool flEqual() @property const @safe pure scope {
+		return testBit(this.flags, 6);
+	}
+
+	void flEqual(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 6, b);
+	}
+
+	bool flHash() @property const @safe pure scope {
+		return testBit(this.flags, 5);
+	}
+
+	void flHash(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 5, b);
+	}
+
+	bool flPlus() @property const @safe pure scope {
+		return testBit(this.flags, 4);
+	}
+
+	void flPlus(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 4, b);
+	}
+
+	bool flSpace() @property const @safe pure scope {
+		return testBit(this.flags, 3);
+	}
+
+	void flSpace(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 3, b);
+	}
+
+	bool flZero() @property const @safe pure scope {
+		return testBit(this.flags, 2);
+	}
+
+	void flZero(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 2, b);
+	}
+
+	bool dynamicSeparatorChar() @property const @safe pure scope {
+		return testBit(this.flags, 0);
+	}
+
+	void dynamicSeparatorChar(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 0, b);
+	}
+
+	bool flDash() @property const @safe pure scope {
+		return testBit(this.flags, 1);
+	}
+
+	void flDash(bool b) @property @safe pure scope {
+		this.flags = setBit(this.flags, 1, b);
+	}
 
     /**
-       The separator of a nested format specifier.
+       The format character.
 
-       `null` means, there is no separator. `empty`, but not `null`,
-       means zero length separator.
+       _Default: `'s'`.
      */
-    string sep;
+    char spec = 's';
 
-    /// Contains the part of the format string, that has not yet been parsed.
-    string trailing;
-
-    /// Sequence `"["` inserted before each range or range like structure.
-    enum string seqBefore = "[";
-
-    /// Sequence `"]"` inserted after each range or range like structure.
-    enum string seqAfter = "]";
-
-    /**
-       Sequence `":"` inserted between element key and element value of
-       an associative array.
-     */
-    enum string keySeparator = ":";
-
-    /**
-       Sequence `", "` inserted between elements of a range, a range like
-       structure or the elements of an associative array.
-     */
-    enum string seqSeparator = ", ";
 
     /**
        Creates a new `FormatSpec`.
