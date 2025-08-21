@@ -335,37 +335,6 @@ if (is(FloatingPointTypeOf!T) && !is(T == enum))
 }
 
 /*
-    Formatting a `creal` is deprecated but still kept around for a while.
- */
-deprecated("Use of complex types is deprecated. Use std.complex")
-void formatValueImpl(Writer, T)(auto ref Writer w, const(T) obj, scope const ref FormatSpec f)
-if (is(immutable T : immutable creal) && !is(T == enum))
-{
-    immutable creal val = obj;
-
-    formatValueImpl(w, val.re, f);
-    if (val.im >= 0)
-    {
-        put(w, '+');
-    }
-    formatValueImpl(w, val.im, f);
-    put(w, 'i');
-}
-
-/*
-    Formatting an `ireal` is deprecated but still kept around for a while.
- */
-deprecated("Use of imaginary types is deprecated. Use std.complex")
-void formatValueImpl(Writer, T)(auto ref Writer w, const(T) obj, scope const ref FormatSpec f)
-if (is(immutable T : immutable ireal) && !is(T == enum))
-{
-    immutable ireal val = obj;
-
-    formatValueImpl(w, val.im, f);
-    put(w, 'i');
-}
-
-/*
     Individual characters are formatted as Unicode characters with `%s`
     and as integers with integral-specific format specs
  */

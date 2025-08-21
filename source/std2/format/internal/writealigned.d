@@ -7,8 +7,7 @@ import std.range.primitives : put;
 import std.traits : isSomeString;
 import std.array : appender;
 
-void writeAligned(Writer, T)(auto ref Writer w, T s, scope const ref FormatSpec f)
-if (isSomeString!T)
+void writeAligned(Writer)(auto ref Writer w, string s, scope const ref FormatSpec f)
 {
     FormatSpec fs = f;
     fs.flZero = false;
@@ -47,19 +46,17 @@ enum PrecisionType
     allDigits,
 }
 
-void writeAligned(Writer, T1, T2, T3)(auto ref Writer w,
-    T1 prefix, T2 grouped, T3 suffix, scope const ref FormatSpec f,
+void writeAligned(Writer)(auto ref Writer w,
+    string prefix, string grouped, string suffix, scope const ref FormatSpec f,
     bool integer_precision = false)
-if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3)
 {
     writeAligned(w, prefix, grouped, "", suffix, f,
                  integer_precision ? PrecisionType.integer : PrecisionType.none);
 }
 
-void writeAligned(Writer, T1, T2, T3, T4)(auto ref Writer w,
-    T1 prefix, T2 grouped, T3 fracts, T4 suffix, scope const ref FormatSpec f,
+void writeAligned(Writer)(auto ref Writer w,
+    string prefix, string grouped, string fracts, string suffix, scope const ref FormatSpec f,
     PrecisionType p = PrecisionType.none)
-if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3 && isSomeString!T4)
 {
     // writes: left padding, prefix, leading zeros, grouped, fracts, suffix, right padding
 

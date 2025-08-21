@@ -32,6 +32,11 @@ import std2.format.spec : FormatSpec;
 import std2.format.compilerhelpers;
 import std2.format.internal.writealigned;
 
+immutable(T) assumeUnique(T)(T t) @safe {
+	static import std.exception;
+	return () @trusted { return std.exception.assumeUnique(t); }();
+}
+
 // wrapper for unittests
 private auto printFloat(T)(const(T) val, FormatSpec f)
 if (is(T == float) || is(T == double)
@@ -108,8 +113,9 @@ if (is(T == float) || is(T == double)
     {
         if (f.precision == f.UNSPECIFIED)
             f.precision = 0;
-        writeAligned(w, prefix[1 - sgn.length .. $], "0", ".", is_upper ? "P+0" : "p+0",
-                     f, PrecisionType.fractionalDigits);
+        writeAligned(w, assumeUnique(prefix[1 - sgn.length .. $]), 
+			"0", ".", is_upper ? "P+0" : "p+0", 
+			f, PrecisionType.fractionalDigits);
         return;
     }
 
@@ -199,8 +205,10 @@ if (is(T == float) || is(T == double)
         round(hex_mant, 0, hex_mant_pos, rc, sgn == "-", is_upper ? 'F' : 'f');
     }
 
-    writeAligned(w, prefix[1 - sgn.length .. $], hex_mant[0 .. 1], hex_mant[1 .. hex_mant_pos],
-                 exp_str[exp_pos .. $], f, PrecisionType.fractionalDigits);
+    writeAligned(w, assumeUnique(prefix[1 - sgn.length .. $]), 
+		assumeUnique(hex_mant[0 .. 1]), 
+		assumeUnique(hex_mant[1 .. hex_mant_pos]),
+        assumeUnique(exp_str[exp_pos .. $]), f, PrecisionType.fractionalDigits);
 }
 
 @safe unittest
@@ -1070,11 +1078,20 @@ if (is(T == float) || is(T == double)
         dec_buf[right++] = '.';
 
     static if (g)
-        writeAligned(w, sgn, dec_buf[left .. left + 1], dec_buf[left + 1 .. right],
-                     exp_buf[exp_pos .. $], f, PrecisionType.allDigits);
+	{
+        writeAligned(w, sgn, 
+			assumeUnique(dec_buf[left .. left + 1]), 
+			assumeUnique(dec_buf[left + 1 .. right]),
+        	assumeUnique(exp_buf[exp_pos .. $]), f, PrecisionType.allDigits);
+	}
     else
-        writeAligned(w, sgn, dec_buf[left .. left + 1], dec_buf[left + 1 .. right],
-                     exp_buf[exp_pos .. $], f, PrecisionType.fractionalDigits);
+	{
+        writeAligned(w, sgn, 
+			assumeUnique(dec_buf[left .. left + 1]), 
+			assumeUnique(dec_buf[left + 1 .. right]),
+            assumeUnique(exp_buf[exp_pos .. $]), 
+			f, PrecisionType.fractionalDigits);
+	}
 }
 
 @safe unittest
@@ -1828,9 +1845,17 @@ if (is(T == float) || is(T == double)
     while (right > start + 1 && dec_buf[right - 1] == '0') right--;
 
     static if (g)
-        writeAligned(w, sgn, dec_buf[left .. start], dec_buf[start .. right], "", f, PrecisionType.allDigits);
+	{
+        writeAligned(w, sgn, 
+			assumeUnique(dec_buf[left .. start]), 
+			assumeUnique(dec_buf[start .. right]), "", f, PrecisionType.allDigits);
+	}
     else
-        writeAligned(w, sgn, dec_buf[left .. start], dec_buf[start .. right], "", f, PrecisionType.fractionalDigits);
+	{
+        writeAligned(w, sgn, 
+			assumeUnique(dec_buf[left .. start]), 
+			assumeUnique(dec_buf[start .. right]), "", f, PrecisionType.fractionalDigits);
+	}
 }
 
 @safe unittest

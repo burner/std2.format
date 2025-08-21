@@ -74,24 +74,6 @@ struct FormatSpec
     bool dynamicSeparatorChar = false;
 
     /**
-       Set to `DYNAMIC` when the separator character is supplied at runtime.
-
-       _Default: `UNSPECIFIED`.
-
-       $(RED Warning:
-           `separatorCharPos` is deprecated. It will be removed in 2.107.0.
-           Please use `dynamicSeparatorChar` instead.)
-     */
-    // @@@DEPRECATED_[2.107.0]@@@
-    deprecated("separatorCharPos will be removed in 2.107.0. Please use dynamicSeparatorChar instead.")
-    int separatorCharPos() { return dynamicSeparatorChar ? DYNAMIC : UNSPECIFIED; }
-
-    /// ditto
-    // @@@DEPRECATED_[2.107.0]@@@
-    deprecated("separatorCharPos will be removed in 2.107.0. Please use dynamicSeparatorChar instead.")
-    void separatorCharPos(int value) { dynamicSeparatorChar = value == DYNAMIC; }
-
-    /**
        Character to use as separator.
 
        _Default: `','`.
