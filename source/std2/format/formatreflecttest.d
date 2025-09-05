@@ -109,9 +109,6 @@ private void formatReflectTest(T)(ref T val, string fmt, string[] formatted, str
         formatReflectTest(aa, "{%([%s=%(%c%)]%|; %)}", [`{[1=hello]; [2=world]}`, `{[2=world]; [1=hello]}`]);
     }
 
-    //import std.exception : assertCTFEable;
-
-    //assertCTFEable!(
     {
         booleanTest();
         integerTest();
@@ -122,5 +119,4 @@ private void formatReflectTest(T)(ref T val, string fmt, string[] formatted, str
         saTest();
         aaTest();
     }
-		//);
 }
