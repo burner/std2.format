@@ -31,6 +31,7 @@ import std2.format.internal.writealigned : writeAligned, PrecisionType;
 import std2.format.spec : FormatSpec;
 import std2.format.compilerhelpers;
 import std2.format.internal.writealigned;
+import std2.format.noopsink;
 
 immutable(T) assumeUnique(T)(T t) @safe {
 	static import std.exception;
@@ -2836,7 +2837,6 @@ if (is(T == float) || is(T == double)
 	//);
 }
 
-	/+ TODO NoOpSing
 // check no allocations
 @safe unittest
 {
@@ -2901,5 +2901,4 @@ if (is(T == float) || is(T == double)
 
     assert(() @trusted { return GC.stats.usedSize; } () == stats.usedSize);
 }
-	+/
 
