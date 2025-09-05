@@ -24,7 +24,6 @@ import std.math.exponential : log2;
 import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
 import std.math.operations : nextDown, nextUp, nextDown;
 import std.traits : isFloatingPoint;
-//import std2.format : NoOpSink;
 import std2.format.internal.rounding : RoundingClass, RoundingMode, round;
 import std2.format.internal.writealigned : writeAligned, PrecisionType;
 
@@ -2569,19 +2568,6 @@ if (is(T == float) || is(T == double)
         f.precision = 2;
 
         fpctrl.rounding = FloatingPointControl.roundToNearest;
-
-        /*
-         assert(printFloat(11.5f, f, RoundingMode.toNearestTiesAwayFromZero) == "12");
-         assert(printFloat(12.5f, f, RoundingMode.toNearestTiesAwayFromZero) == "13");
-         assert(printFloat(11.7f, f, RoundingMode.toNearestTiesAwayFromZero) == "12");
-         assert(printFloat(11.3f, f, RoundingMode.toNearestTiesAwayFromZero) == "11");
-         assert(printFloat(11.0f, f, RoundingMode.toNearestTiesAwayFromZero) == "11");
-         assert(printFloat(-11.5f, f, RoundingMode.toNearestTiesAwayFromZero) == "-12");
-         assert(printFloat(-12.5f, f, RoundingMode.toNearestTiesAwayFromZero) == "-13");
-         assert(printFloat(-11.7f, f, RoundingMode.toNearestTiesAwayFromZero) == "-12");
-         assert(printFloat(-11.3f, f, RoundingMode.toNearestTiesAwayFromZero) == "-11");
-         assert(printFloat(-11.0f, f, RoundingMode.toNearestTiesAwayFromZero) == "-11");
-         */
 
         // ties to even
         assert(printFloat(11.5f, f) == "12");
