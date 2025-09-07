@@ -1,13 +1,19 @@
 module std2.format.tests;
 
+version(StdUnittest) {
+
+import std.array : appender;
+import std.conv : to;
 import std.exception : collectException, collectExceptionMsg;
-import std.range : front, popFront;
 import std.meta : AliasSeq;
-import std.range.interfaces : inputRangeObject;
+import std.range : back, front, popFront;
+import std.range.interfaces : InputRange, inputRangeObject;
 import std.typecons : Nullable;
 
 import std2.format.exception : FormatException;
 import std2.format.formattest;
+import std2.format.internal.write;
+import std2.format.formatfunction;
 import std2.format.spec;
 import std2.format.compilerhelpers;
 
@@ -374,8 +380,6 @@ import std2.format.compilerhelpers;
     formatTest(f, "Foo(Nullable.null)");
 }
 
-__EOF__
-
 @safe pure unittest
 {
     assert(collectExceptionMsg!FormatException(format("%p", null)).back == 'p');
@@ -390,11 +394,11 @@ __EOF__
 {
     assert(collectExceptionMsg!FormatException(format("%c", 5)).back == 'c');
 
-    assertCTFEable!(
-    {
+    //assertCTFEable!(
+    //{
         formatTest(9, "9");
         formatTest(10, "10");
-    });
+    //});
 }
 
 
@@ -474,10 +478,10 @@ __EOF__
 
 @safe pure unittest
 {
-    assertCTFEable!(
-    {
+    //assertCTFEable!(
+    //{
         formatTest('c', "c");
-    });
+    //});
 }
 
 @safe unittest
@@ -747,3 +751,4 @@ __EOF__
     assert(writer.data == " 4.200e+01");
 }
 
+}

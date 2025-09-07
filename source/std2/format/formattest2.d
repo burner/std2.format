@@ -1,5 +1,7 @@
 module std2.format.formattest2;
 
+version(StdUnittest) {
+
 import std.array : appender;
 import std.exception : assertThrown, collectExceptionMsg;
 import std.typecons : Nullable;
@@ -1958,4 +1960,6 @@ version (StdUnittest)
     cmp = "0,100,000";
     tmp  = format("%08,d", 100_000);
     assert(tmp == cmp, tmp);
+}
+
 }

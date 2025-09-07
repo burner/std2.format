@@ -19,15 +19,20 @@ Source: $(PHOBOSSRC std2.format/spec.d)
  */
 module std2.format.spec;
 
+import std.algorithm.searching : canFind, findSplitBefore;
 import std.algorithm.searching : startsWith;
-import std.ascii : isDigit;
+import std.array : appender;
+import std.ascii : isDigit, isLower, isWhite;
 import std.conv : parse, text, to;
-import std.exception : assertThrown;
+import std.conv : text;
+import std.exception : assertThrown, collectExceptionMsg;
 import std.range.primitives;
 import std.traits : Unqual;
+import std.utf : stride;
 
+import std2.format.formatfunction : format;
 import std2.format.internal.write : formatValue;
-import std2.format.exception : FormatException;
+import std2.format.exception : FormatException, enforceFmt;
 
 private bool testBit(ubyte value, int idx) @safe pure {
 	ubyte bitmask = cast(ubyte)(1 << idx);
@@ -271,8 +276,6 @@ struct FormatSpec
      */
     bool writeUpToNextSpec(OutputRange)(ref OutputRange writer) scope @safe pure
     {
-        import std2.format.exception : enforceFmt;
-
         if (trailing.empty)
             return false;
         for (size_t i = 0; i < trailing.length; ++i)
@@ -300,7 +303,6 @@ struct FormatSpec
 
     private void fillUp() scope @safe pure
     {
-        import std2.format.exception : enforceFmt, FormatException;
 
         // Reset content
         if (__ctfe)
@@ -530,10 +532,6 @@ struct FormatSpec
     //--------------------------------------------------------------------------
     package bool readUpToNextSpec(R)(ref R r) scope @safe
     {
-        import std.ascii : isLower, isWhite;
-        import std2.format : enforceFmt;
-        import std.utf : stride;
-
         // Reset content
         if (__ctfe)
         {
@@ -600,7 +598,6 @@ struct FormatSpec
 
     package string getCurFmtStr() const @safe
     {
-        import std.array : appender;
         //import std2.format.write : formatValue; TODO
 
         auto w = appender!string();
@@ -644,8 +641,6 @@ struct FormatSpec
      */
     string toString() const @safe pure
     {
-        import std.array : appender;
-
         auto app = appender!string();
         app.reserve(200 + trailing.length);
         toString(app);
@@ -702,8 +697,6 @@ struct FormatSpec
 ///
 @safe pure unittest
 {
-    import std.array : appender;
-
     auto a = appender!(string)();
     auto fmt = "Number: %6.4e\nString: %s";
     auto f = FormatSpec(fmt);
@@ -729,11 +722,6 @@ struct FormatSpec
 
 @safe unittest
 {
-    import std.array : appender;
-    import std.conv : text;
-    import std.exception : assertThrown;
-    import std2.format.exception : FormatException;
-
     auto w = appender!(char[])();
     auto f = FormatSpec("abc%sdef%sghi");
     f.writeUpToNextSpec(w);
@@ -781,10 +769,6 @@ struct FormatSpec
 // https://issues.dlang.org/show_bug.cgi?id=14059
 @safe unittest
 {
-    import std.array : appender;
-    import std.exception : assertThrown;
-    import std2.format.exception : FormatException;
-
     auto a = appender!(string)();
 
     auto f = FormatSpec("%-(%s%"); // %)")
@@ -796,9 +780,6 @@ struct FormatSpec
 
 @safe unittest
 {
-    import std.array : appender;
-    import std2.format : format;
-
     auto a = appender!(string)();
 
     auto f = FormatSpec("%,d");
@@ -824,8 +805,6 @@ struct FormatSpec
 
 @safe pure unittest
 {
-    import std.algorithm.searching : canFind, findSplitBefore;
-
     auto expected = "width = 2" ~
         "\nprecision = 5" ~
         "\nspec = f" ~
@@ -850,10 +829,6 @@ struct FormatSpec
 // https://issues.dlang.org/show_bug.cgi?id=15348
 @safe pure unittest
 {
-    import std.array : appender;
-    import std.exception : collectExceptionMsg;
-    import std2.format.exception : FormatException;
-
     auto w = appender!(char[])();
     auto f = FormatSpec("%*10d");
 
@@ -864,7 +839,6 @@ struct FormatSpec
 // https://github.com/dlang/phobos/issues/10713
 @safe pure unittest
 {
-    import std.array : appender;
     auto f = FormatSpec("%3$d%d");
 
     auto w = appender!(char[])();
@@ -879,7 +853,6 @@ struct FormatSpec
 // https://github.com/dlang/phobos/issues/10699
 @safe pure unittest
 {
-    import std.array : appender;
     auto f = FormatSpec("%1:$d");
     auto w = appender!(char[])();
 
@@ -906,10 +879,6 @@ Throws:
   */
 FormatSpec singleSpec(string fmt) pure @safe
 {
-    import std.conv : text;
-    import std2.format.exception : enforceFmt;
-    import std.range.primitives : empty, front;
-
     enforceFmt(fmt.length >= 2, "fmt must be at least 2 characters long");
     enforceFmt(fmt.front == '%', "fmt must start with a '%' character");
     enforceFmt(fmt[1] != '%', "'%%' is not a permissible format specifier");
@@ -947,12 +916,8 @@ FormatSpec singleSpec(string fmt) pure @safe
     assertThrown!FormatException(singleSpec("%%"));
 }
 
-	/*
 @safe unittest
 {
-    import std.exception : collectExceptionMsg;
-    import std2.format : format, FormatException;
-
     // width/precision
     assert(collectExceptionMsg!FormatException(format("%*.d", 5.1, 2))
         == "integer width expected, not double for argument #1");
@@ -975,5 +940,5 @@ FormatSpec singleSpec(string fmt) pure @safe
         == "Orphan format specifier: %d");
     assert(collectExceptionMsg!FormatException(format("%.*,*?d", 5))
         == "Missing separator digit width argument");
-}*/
+}
 
