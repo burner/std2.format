@@ -24,7 +24,6 @@ jobs:
           - 'dmd-latest'
           - 'ldc-latest'
           - 'dmd-beta'
-          - 'gdc-latest'
     steps:
     - uses: actions/checkout@v2
       with:
