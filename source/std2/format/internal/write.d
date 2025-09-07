@@ -39,6 +39,11 @@ import std.typecons : Nullable;
 import std.uni : isGraphical, graphemeStride;
 import std.utf : decode, UTFException;
 
+version(Windows) {
+	import core.sys.windows.com : IID, IUnknown;
+	import core.sys.windows.windef : HRESULT;
+}
+
 package(std2.format):
 
 /*
