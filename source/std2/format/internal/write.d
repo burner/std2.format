@@ -24,6 +24,7 @@ import std2.format.exception : FormatException, enforceFmt;
 import std2.format.internal.floats : printFloat, isFloatSpec;
 import std2.format.spec : FormatSpec, singleSpec;
 import std2.format.internal.checkformatexception;
+import std2.format.internal.getwidth : getWidth;
 import std.math.exponential : log2;
 import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
 import std.math.operations : nextUp;
@@ -1574,17 +1575,6 @@ if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3 && isSomeString!T4)
     assert(w.data == "  pre0,000,0gr,oup,ingsuf", w.data);
 }
 
-private long getWidth(T)(T s)
-{
-    // check for non-ascii character
-    if (s.all!(a => a <= 0x7F)) return s.length;
-
-    //TODO: optimize this
-    long width = 0;
-    for (size_t i; i < s.length; i += graphemeStride(s, i))
-        ++width;
-    return width;
-}
 
 enum RoundingClass { ZERO, LOWER, FIVE, UPPER }
 enum RoundingMode { up, down, toZero, toNearestTiesToEven, toNearestTiesAwayFromZero }
