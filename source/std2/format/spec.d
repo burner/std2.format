@@ -274,7 +274,7 @@ struct FormatSpec
            A $(REF_ALTTEXT FormatException, FormatException, std2.format)
            when parsing the format specifier did not succeed.
      */
-    bool writeUpToNextSpec(OutputRange)(ref OutputRange writer) scope @safe pure
+    bool writeUpToNextSpec(OutputRange)(ref OutputRange writer) scope
     {
         if (trailing.empty)
             return false;
@@ -530,7 +530,7 @@ struct FormatSpec
     }
 
     //--------------------------------------------------------------------------
-    package bool readUpToNextSpec(R)(ref R r) scope @safe
+    package bool readUpToNextSpec(R)(ref R r) scope
     {
         // Reset content
         if (__ctfe)
