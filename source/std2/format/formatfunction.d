@@ -9,6 +9,7 @@ import std.range.primitives;
 import std.utf : encode;
 
 import std2.format.internal.write;
+import std2.format.formatfunction2;
 import std2.format.exception;
 import std2.format.spec;
 import std2.format.internal.checkformatexception;

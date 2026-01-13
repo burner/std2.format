@@ -8,6 +8,7 @@ import std.math.operations : isClose;
 import std.traits : FloatingPointTypeOf;
 
 import std2.format.internal.write;
+import std2.format.formatfunction2;
 
 private void formatReflectTest(T)(ref T val, string fmt, string formatted, string fn = __FILE__, size_t ln = __LINE__)
 {

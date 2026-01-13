@@ -554,4 +554,5 @@ module std2.format;
 
 public import std2.format.internal.write;
 public import std2.format.formatfunction;
+public import std2.format.formatfunction2;
 public import std2.format.spec;
