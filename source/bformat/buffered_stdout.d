@@ -4,11 +4,12 @@ import std.range.primitives;
 import std.algorithm : copy;
 import std.array : array;
 import std.stdio;
+import core.sys.posix.unistd : write, STDOUT_FILENO;
 
 
 /**
  * A buffered output range that writes to stdout only when its 64-byte buffer is full.
- * Accumulates ubyte elements and flushes to stdout via rawWrite when buffer reaches 64 bytes.
+ * Accumulates ubyte elements and flushes to stdout using direct Linux file descriptor I/O.
  * Manual flush() is required for any remaining bytes at the end.
  */
 struct BufferedStdoutRange {
@@ -39,7 +40,7 @@ struct BufferedStdoutRange {
      */
     void flush() {
         if(index > 0) {
-            stdout.rawWrite(buffer[0 .. index]);
+            write(STDOUT_FILENO, &buffer[0], index);
             index = 0;
         }
     }
