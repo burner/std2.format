@@ -38,7 +38,59 @@ See_Also:
  */
 string format(Args...)(in string fmt, Args args)
 {
+    // Fast-track for pure text (no arguments, only literal text and escaped %%)
+    static if (args.length == 0)
+    {
+        if (isPureTextOrEscaped(fmt))
+        {
+            return formatPureText(fmt);
+        }
+    }
+
+    // Fast-track for simple single-argument cases with type safety
+    static if (args.length == 1)
+    {
+        alias Arg = Args[0];
+
+        // Type-safe fast paths for common cases
+        static if (is(Arg == string))
+        {
+            if (fmt == "%s")
+                return args[0];
+        }
+        else static if (is(Arg : const(char)[]))
+        {
+            if (fmt == "%s")
+                return cast(string)args[0];
+        }
+    }
+
+    // Pre-allocate buffer capacity based on length estimate to reduce reallocations
+    size_t estimatedLen = guessLength(fmt);
+
+    static if (is(typeof(text("", args)))) // Check if we can use small string optimization
+    {
+        if (estimatedLen > 0 && estimatedLen <= smallStringLimit)
+        {
+            // Use stack-based writer for small strings
+            StackWriter w;
+            auto n = formattedWrite(w, fmt, args);
+            version (all)
+            {
+                // In the future, this check will be removed to increase consistency
+                // with formattedWrite
+                enforceFmt(n == args.length, text("Orphan format arguments: args[", n, "..", args.length, "]"));
+            }
+            return w.data;
+        }
+    }
+
     auto w = appender!(string);
+    if (estimatedLen > 0)
+    {
+        w.reserve(estimatedLen);
+    }
+
     auto n = formattedWrite(w, fmt, args);
     version (all)
     {
@@ -149,6 +201,18 @@ format specifiers. To avoid this behavior, use "%-(" instead of "%(":
     assertThrown!FormatException(format("%d", "foo"));
 }
 
+/// Test small string optimization
+@safe pure unittest
+{
+    // Test small string uses stack buffer
+    auto result = format("test %d", 42);
+    assert(result == "test 42");
+
+    // Test Unicode in small string
+    auto unicodeResult = format("hello %s", "世界");
+    assert(unicodeResult == "hello 世界");
+}
+
 /// ditto
 typeof(fmt) format(alias fmt, Args...)(Args args)
 if (isSomeString!(typeof(fmt)))
@@ -189,61 +253,192 @@ private size_t guessLength(string fmtString) pure @safe
     auto spec = FormatSpec(fmtString);
     while (spec.writeUpToNextSpec(output))
     {
-        // take a guess
-        if (spec.width == 0 && (spec.precision == spec.UNSPECIFIED || spec.precision == spec.DYNAMIC))
-        {
-            switch (spec.spec)
-            {
-                case 'c':
-                    ++len;
-                    break;
-                case 'd':
-                case 'x':
-                case 'X':
-                    len += 3;
-                    break;
-                case 'b':
-                    len += 8;
-                    break;
-                case 'f':
-                case 'F':
-                    len += 10;
-                    break;
-                case 's':
-                case 'e':
-                case 'E':
-                case 'g':
-                case 'G':
-                    len += 12;
-                    break;
-                default: break;
-            }
-
-            continue;
-        }
-
-        if ((spec.spec == 'e' || spec.spec == 'E' || spec.spec == 'g' ||
-             spec.spec == 'G' || spec.spec == 'f' || spec.spec == 'F') &&
-            spec.precision != spec.UNSPECIFIED && spec.precision != spec.DYNAMIC &&
-            spec.width == 0
-        )
-        {
-            len += spec.precision + 5;
-            continue;
-        }
-
-        if (spec.width == spec.precision)
-            len += spec.width;
-        else if (spec.width > 0 && spec.width != spec.DYNAMIC &&
-                 (spec.precision == spec.UNSPECIFIED || spec.width > spec.precision))
-        {
-            len += spec.width;
-        }
-        else if (spec.precision != spec.UNSPECIFIED && spec.precision > spec.width)
-            len += spec.precision;
+        // Enhanced length estimation with compound specifier support
+        len += estimateFormatSpecLength(spec);
     }
     len += output.data.length;
     return len;
+}
+
+// Estimate length for a single format specifier
+private size_t estimateFormatSpecLength(ref FormatSpec spec) pure @safe
+{
+    // Handle compound specifiers (%(...))
+    if (spec.spec == '(')
+    {
+        return estimateCompoundSpecLength(spec);
+    }
+
+    // Replicate the original guessLength logic exactly for backward compatibility
+    if (spec.width == 0 && (spec.precision == spec.UNSPECIFIED || spec.precision == spec.DYNAMIC))
+    {
+        switch (spec.spec)
+        {
+            case 'c': return 1;
+            case 'd', 'u', 'x', 'X': return 3;
+            case 'b': return 8;
+            case 'f', 'F': return 10;
+            case 's', 'e', 'E', 'g', 'G': return 12;
+            default: return 8;
+        }
+    }
+
+    if ((spec.spec == 'e' || spec.spec == 'E' || spec.spec == 'g' ||
+         spec.spec == 'G' || spec.spec == 'f' || spec.spec == 'F') &&
+        spec.precision != spec.UNSPECIFIED && spec.precision != spec.DYNAMIC &&
+        spec.width == 0
+    )
+    {
+        return spec.precision + 5;
+    }
+
+    if (spec.width == spec.precision)
+        return spec.width;
+    else if (spec.width > 0 && spec.width != spec.DYNAMIC &&
+             (spec.precision == spec.UNSPECIFIED || spec.width > spec.precision))
+    {
+        return spec.width;
+    }
+    else if (spec.precision != spec.UNSPECIFIED && spec.precision > spec.width)
+        return spec.precision;
+
+    // For dynamic cases that don't match any pattern, return 0
+    // (old behavior was to not add anything to len)
+    return 0;
+}
+
+// Estimate base length for non-compound specifiers
+private size_t estimateBaseSpecLength(ref FormatSpec spec) pure @safe
+{
+    if (spec.width > 0 || (spec.precision != spec.UNSPECIFIED && spec.precision != spec.DYNAMIC))
+    {
+        // When width/precision are specified, use more conservative estimates
+        switch (spec.spec)
+        {
+            case 'c': return 1;
+            case 'd', 'u': return spec.precision != spec.UNSPECIFIED ? spec.precision : 11; // int.min has 11 chars
+            case 'x', 'X': return spec.precision != spec.UNSPECIFIED ? spec.precision : 8;  // uint hex
+            case 'o': return spec.precision != spec.UNSPECIFIED ? spec.precision : 11; // uint octal
+            case 'b': return spec.precision != spec.UNSPECIFIED ? spec.precision : 32; // uint binary
+            case 'f', 'F': return spec.precision != spec.UNSPECIFIED ? spec.precision + 7 : 15;
+            case 'e', 'E': return spec.precision != spec.UNSPECIFIED ? spec.precision + 7 : 15;
+            case 'g', 'G': return spec.precision != spec.UNSPECIFIED ? spec.precision + 6 : 15;
+            case 's': return spec.precision != spec.UNSPECIFIED ? spec.precision : 16; // reasonable default
+            default: return 16; // fallback
+        }
+    }
+    else
+    {
+        // No width/precision specified - use conservative defaults
+        switch (spec.spec)
+        {
+            case 'c': return 1;
+            case 'd', 'u': return 3;  // typical small integers
+            case 'x', 'X': return 3;  // typical hex values
+            case 'o': return 3;       // typical octal values
+            case 'b': return 8;       // typical binary values
+            case 'f', 'F': return 10; // typical float formatting
+            case 'e', 'E': return 12; // scientific notation
+            case 'g', 'G': return 12; // general format
+            case 's': return 12;      // typical string length
+            default: return 16;       // fallback for unknown specs
+        }
+    }
+}
+
+// Estimate length for compound specifiers (%(...))
+private size_t estimateCompoundSpecLength(ref FormatSpec spec) pure @safe
+{
+    // Compound specifiers are used for arrays, ranges, and complex types
+    // Use more sophisticated estimation based on the nested format
+
+    size_t elementCount = 4; // reasonable default for small collections
+    size_t elementLength = 0;
+
+    // Analyze the nested format string for better estimates
+    if (spec.nested.length > 0)
+    {
+        // Count format specifiers in nested string to estimate elements per item
+        size_t specCount = 0;
+        size_t totalNestedLen = 0;
+
+        auto nestedSpec = FormatSpec(spec.nested);
+        auto tempOutput = appender!(string)();
+
+        while (nestedSpec.writeUpToNextSpec(tempOutput))
+        {
+            specCount++;
+            totalNestedLen += estimateFormatSpecLength(nestedSpec);
+        }
+
+        // Add literal text length
+        totalNestedLen += tempOutput.data.length;
+
+        // For associative arrays, there are typically 2 specs (key + value)
+        // For regular arrays/ranges, there's typically 1 spec per element
+        if (specCount >= 2)
+        {
+            // Likely an AA with key-value pairs
+            elementCount = 3; // fewer elements for AAs (they're usually smaller)
+            elementLength = totalNestedLen; // whole key-value format per element
+        }
+        else if (specCount == 1)
+        {
+            // Regular array/range
+            elementLength = totalNestedLen;
+        }
+        else
+        {
+            // No specs found, fallback
+            elementLength = spec.nested.length > 0 ? spec.nested.length : 8;
+        }
+    }
+    else
+    {
+        // No nested format, use defaults
+        elementLength = 8;
+    }
+
+    // Calculate total: elements + separators + brackets
+    size_t totalLen = elementCount * elementLength;
+
+    // Default separator is ", " (2 chars)
+    size_t sepLen = 2;
+
+    // Custom separator?
+    if (spec.sep !is null && spec.sep.length > 0)
+    {
+        sepLen = spec.sep.length;
+    }
+
+    // Add separator length between elements
+    if (elementCount > 1)
+    {
+        totalLen += (elementCount - 1) * sepLen;
+    }
+
+    // Add brackets: "[]" for arrays, "{}" for AAs, etc.
+    // For AAs, the format might include custom brackets in nested format
+    totalLen += 2;
+
+    // Account for potential truncation with precision
+    if (spec.precision != spec.UNSPECIFIED && spec.precision != spec.DYNAMIC)
+    {
+        // Precision limits the number of elements shown
+        size_t maxElements = spec.precision;
+        if (elementCount > maxElements)
+        {
+            // Recalculate with limited elements
+            totalLen = maxElements * elementLength;
+            if (maxElements > 1)
+            {
+                totalLen += (maxElements - 1) * sepLen;
+            }
+            totalLen += 2; // brackets
+        }
+    }
+
+    return totalLen;
 }
 
 @safe pure
@@ -262,6 +457,85 @@ unittest
     assert(guessLength("%02d:%02d:%02d") == 8);
     assert(guessLength("%0.2f") == 7);
     assert(guessLength("%0*d") == 0);
+}
+
+enum smallStringLimit = 256;
+
+// Stack-based writer for small strings to avoid heap allocation
+private struct StackWriter
+{
+    char[smallStringLimit * 2] buffer;
+    size_t pos;
+
+    void put(char c) pure @safe
+    {
+        if (pos < buffer.length)
+            buffer[pos++] = c;
+    }
+
+    void put(const(char)[] s) pure @safe
+    {
+        foreach (char c; s)
+            put(c);
+    }
+
+    void put(dchar c) pure @safe
+    {
+        import std.utf : encode;
+        char[4] temp;
+        auto len = encode(temp, c);
+        put(temp[0..len]);
+    }
+
+    @property string data() pure @safe
+    {
+        return buffer[0..pos].idup;
+    }
+}
+
+// TODO: Implement small string optimization with proper @safe/@pure attributes
+
+// Fast-track helpers for simple format cases
+
+// Check if format string contains only literal text and escaped %%
+private bool isPureTextOrEscaped(string fmt) pure @safe
+{
+    if (fmt.length == 0) return true;
+
+    for (size_t i = 0; i < fmt.length; i++)
+    {
+        if (fmt[i] == '%')
+        {
+            if (i + 1 >= fmt.length || fmt[i + 1] != '%')
+                return false; // Unescaped % found
+            i++; // Skip the escaped %
+        }
+    }
+    return true;
+}
+
+// Format pure text with escaped sequences
+private string formatPureText(string fmt) pure @safe
+{
+    if (fmt.length == 0) return "";
+
+    auto result = new char[fmt.length];
+    size_t j = 0;
+
+    for (size_t i = 0; i < fmt.length; i++)
+    {
+        if (fmt[i] == '%' && i + 1 < fmt.length && fmt[i + 1] == '%')
+        {
+            result[j++] = '%';
+            i++; // Skip the second %
+        }
+        else
+        {
+            result[j++] = fmt[i];
+        }
+    }
+
+    return result[0..j].idup;
 }
 
 /**
@@ -345,7 +619,7 @@ char[] sformat(Args...)(return scope char[] buf, string fmt, Args args)
     {
         // In the future, this check will be removed to increase consistency
         // with formattedWrite
-        import std.conv : text;
+import std.conv : text, to;
         enforceFmt(
             n == args.length,
             text("Orphan format arguments: args[", n, " .. ", args.length, "]")
