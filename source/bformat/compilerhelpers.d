@@ -1,4 +1,4 @@
-module std2.format.compilerhelpers;
+module bformat.compilerhelpers;
 
 import std.traits;
 import std.range : ElementType;

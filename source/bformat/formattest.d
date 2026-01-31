@@ -1,7 +1,7 @@
-module std2.format.formattest;
+module bformat.formattest;
 
-import std2.format.internal.write;
-import std2.format.spec;
+import bformat.write;
+import bformat.spec;
 
 import std.algorithm.searching : canFind;
 import std.conv : text;

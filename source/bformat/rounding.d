@@ -1,4 +1,4 @@
-module std2.format.internal.rounding;
+module bformat.rounding;
 
 import std.math.hardware;
 

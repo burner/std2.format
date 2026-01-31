@@ -1,4 +1,4 @@
-module std2.format.formattest2;
+module bformat.formattest2;
 
 version(StdUnittest) {
 
@@ -8,11 +8,11 @@ import std.typecons : Nullable;
 import std.range : back, repeat, iota, isOutputRange;
 import std.math : log2;
 
-import std2.format.formatfunction;
-import std2.format.exception;
-import std2.format.compilerhelpers;
-import std2.format.spec;
-import std2.format.internal.write;
+import bformat.formatfunction;
+import bformat.exception;
+import bformat.compilerhelpers;
+import bformat.spec;
+import bformat.write;
 
 @safe pure unittest
 {
@@ -881,15 +881,15 @@ version (StdUnittest)
 
     immutable(C) c2 = new C();
     s = format("%s", c2);
-    assert(s == "immutable(std2.format.formattest2.C)", s);
+    assert(s == "immutable(bformat.formattest2.C)", s);
 
     const(C) c3 = new C();
     s = format("%s", c3);
-    assert(s == "const(std2.format.formattest2.C)", s);
+    assert(s == "const(bformat.formattest2.C)", s);
 
     shared(C) c4 = new C();
     s = format("%s", c4);
-    assert(s == "shared(std2.format.formattest2.C)", s);
+    assert(s == "shared(bformat.formattest2.C)", s);
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=7879

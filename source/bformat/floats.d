@@ -9,10 +9,10 @@
 
    Authors: Bernhard Seckinger
 
-   Source: $(PHOBOSSRC std2.format/internal/floats.d)
+   Source: $(PHOBOSSRC bformat/internal/floats.d)
  */
 
-module std2.format.internal.floats;
+module bformat.floats;
 
 import core.bitop : bsr;
 import core.math : abs = fabs;
@@ -24,13 +24,13 @@ import std.math.exponential : log2;
 import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
 import std.math.operations : nextDown, nextUp, nextDown;
 import std.traits : isFloatingPoint;
-import std2.format.internal.rounding : RoundingClass, RoundingMode, round;
-import std2.format.internal.writealigned : writeAligned, PrecisionType;
+import bformat.rounding : RoundingClass, RoundingMode, round;
+import bformat.writealigned : writeAligned, PrecisionType;
 
-import std2.format.spec : FormatSpec;
-import std2.format.compilerhelpers;
-import std2.format.internal.writealigned;
-import std2.format.noopsink;
+import bformat.spec : FormatSpec;
+import bformat.compilerhelpers;
+import bformat.writealigned;
+import bformat.noopsink;
 
 immutable(T) assumeUnique(T)(T t) @safe {
 	static import std.exception;
@@ -49,7 +49,7 @@ if (is(T == float) || is(T == double)
 }
 
 /// Returns: whether `c` is a supported format specifier for floats
-package(std2.format) bool isFloatSpec(char c) nothrow @nogc pure @safe
+package(bformat) bool isFloatSpec(char c) nothrow @nogc pure @safe
 {
     return c == 'a' || c == 'A'
            || c == 'e' || c == 'E'
@@ -57,7 +57,7 @@ package(std2.format) bool isFloatSpec(char c) nothrow @nogc pure @safe
            || c == 'g' || c == 'G';
 }
 
-package(std2.format) void printFloat(Writer, T)(auto ref Writer w, const(T) val, FormatSpec f)
+package(bformat) void printFloat(Writer, T)(auto ref Writer w, const(T) val, FormatSpec f)
 if (is(T == float) || is(T == double)
     || (is(T == real) && (T.mant_dig == double.mant_dig || T.mant_dig == 64)))
 {

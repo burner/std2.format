@@ -1,12 +1,12 @@
-## std2.format
+## bformat
 
 This is an attempt to improve std.format compile time performance by only
 supporting `string`s no `wstring` no `dstring`.
 
-See the below code importing `std2.format`.
+See the below code importing `bformat`.
 
 ```d
-import std2.format;
+import bformat;
 
 void main() {
     string s = format("Hello %s %s", "World", 1337);
@@ -16,7 +16,7 @@ void main() {
 ```
 
 Note the import statement at the top of the example. 
-This is all that should be required to use the faster compiling std2.format.
+This is all that should be required to use the faster compiling bformat.
 
 ### Limitation
 

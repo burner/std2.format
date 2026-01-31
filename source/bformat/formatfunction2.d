@@ -1,13 +1,13 @@
-module std2.format.formatfunction2;
+module bformat.formatfunction2;
 
 import std.array;
 import std.conv : text;
 import std.traits : isSomeChar, isSomeString;
 
-import std2.format.internal.checkformatexception;
-import std2.format.spec;
-import std2.format.exception;
-import std2.format.internal.write;
+import bformat.checkformatexception;
+import bformat.spec;
+import bformat.exception;
+import bformat.write;
 
 /**
 Converts its arguments according to a format string and writes
@@ -20,7 +20,7 @@ compile-time.
 Params:
     w = an $(REF_ALTTEXT output range, isOutputRange, std, range, primitives),
         where the formatted result is written to
-    fmt = a $(MREF_ALTTEXT format string, std2.format)
+    fmt = a $(MREF_ALTTEXT format string, bformat)
     args = a variadic list of arguments to be formatted
     Writer = the type of the writer `w`
     Char = character type of `fmt`

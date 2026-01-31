@@ -1,4 +1,4 @@
-module std2.format.exception;
+module bformat.exception;
 
 import std.exception : enforce;
 

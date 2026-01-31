@@ -1,4 +1,4 @@
-module std2.format.tests;
+module bformat.tests;
 
 version(StdUnittest) {
 
@@ -10,12 +10,12 @@ import std.range : back, front, popFront;
 import std.range.interfaces : InputRange, inputRangeObject;
 import std.typecons : Nullable;
 
-import std2.format.exception : FormatException;
-import std2.format.formattest;
-import std2.format.internal.write;
-import std2.format.formatfunction;
-import std2.format.spec;
-import std2.format.compilerhelpers;
+import bformat.exception : FormatException;
+import bformat.formattest;
+import bformat.write;
+import bformat.formatfunction;
+import bformat.spec;
+import bformat.compilerhelpers;
 
 @safe pure unittest
 {

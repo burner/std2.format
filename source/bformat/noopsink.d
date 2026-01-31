@@ -1,4 +1,4 @@
-module std2.format.noopsink;
+module bformat.noopsink;
 
 // Like NullSink, but toString() isn't even called at all. Used to test the format string.
 package struct NoOpSink

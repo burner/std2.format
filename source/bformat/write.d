@@ -10,9 +10,9 @@
 
    Source: $(PHOBOSSRC std/format/internal/write.d)
  */
-module std2.format.internal.write;
+module bformat.write;
 
-import std2.format.noopsink;
+import bformat.noopsink;
 import core.exception : AssertError;
 import core.simd; // cannot be selective, because float4 might not be defined
 import std.algorithm.comparison : among, min;
@@ -20,12 +20,12 @@ import std.algorithm.searching : all, canFind;
 import std.array : appender;
 import std.conv : text, to;
 import std.exception : assertThrown, collectExceptionMsg, enforce;
-import std2.format.exception : FormatException, enforceFmt;
-import std2.format.internal.floats : printFloat, isFloatSpec;
-import std2.format.spec : FormatSpec, singleSpec;
-import std2.format.internal.checkformatexception;
-import std2.format.formatfunction2;
-import std2.format.internal.getwidth : getWidth;
+import bformat.exception : FormatException, enforceFmt;
+import bformat.floats : printFloat, isFloatSpec;
+import bformat.spec : FormatSpec, singleSpec;
+import bformat.checkformatexception;
+import bformat.formatfunction2;
+import bformat.getwidth : getWidth;
 import std.math.exponential : log2;
 import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
 import std.math.operations : nextUp;
@@ -717,8 +717,8 @@ enum HasToStringResult
     customPutWriterFormatSpec,
 }
 
-package(std2.format) alias DScannerBug895 = int[256];
-package(std2.format) immutable bool hasPreviewIn = ((in DScannerBug895 a) { return __traits(isRef, a); })(DScannerBug895.init);
+package(bformat) alias DScannerBug895 = int[256];
+package(bformat) immutable bool hasPreviewIn = ((in DScannerBug895 a) { return __traits(isRef, a); })(DScannerBug895.init);
 
 template hasToString(T)
 {
@@ -1667,7 +1667,7 @@ writes the result to an output range.
 
 More details about how types are formatted, and how the format
 specifier influences the outcome, can be found in the definition of a
-$(MREF_ALTTEXT format string, std2.format).
+$(MREF_ALTTEXT format string, bformat).
 
 Params:
     w = an $(REF_ALTTEXT output range, isOutputRange, std, range, primitives) where

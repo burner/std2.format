@@ -1,4 +1,4 @@
-module std2.format.formatfunction;
+module bformat.formatfunction;
 
 import core.exception : RangeError;
 
@@ -8,11 +8,11 @@ import std.conv : text;
 import std.range.primitives;
 import std.utf : encode;
 
-import std2.format.internal.write;
-import std2.format.formatfunction2;
-import std2.format.exception;
-import std2.format.spec;
-import std2.format.internal.checkformatexception;
+import bformat.write;
+import bformat.formatfunction2;
+import bformat.exception;
+import bformat.spec;
+import bformat.checkformatexception;
 
 /**
 Converts its arguments according to a format string into a string.
@@ -548,7 +548,7 @@ compile-time.
 
 Params:
     buf = the buffer where the formatted string should go
-    fmt = a $(MREF_ALTTEXT format string, std2.format)
+    fmt = a $(MREF_ALTTEXT format string, bformat)
     args = a variadic list of arguments to be formatted
     Char = character type of `fmt`
     Args = a variadic list of types of the arguments

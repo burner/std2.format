@@ -4,7 +4,7 @@
 This is a submodule of $(MREF std, format).
 
 It centers around a struct called $(LREF FormatSpec), which takes a
-$(MREF_ALTTEXT format string, std2.format) and provides tools for
+$(MREF_ALTTEXT format string, bformat) and provides tools for
 parsing this string. Additionally this module contains a function
 $(LREF singleSpec) which helps treating a single format specifier.
 
@@ -15,9 +15,9 @@ License: $(HTTP boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: $(HTTP walterbright.com, Walter Bright), $(HTTP erdani.com,
 Andrei Alexandrescu), and Kenji Hara
 
-Source: $(PHOBOSSRC std2.format/spec.d)
+Source: $(PHOBOSSRC bformat/spec.d)
  */
-module std2.format.spec;
+module bformat.spec;
 
 import std.algorithm.searching : canFind, findSplitBefore;
 import std.algorithm.searching : startsWith;
@@ -30,9 +30,9 @@ import std.range.primitives;
 import std.traits : Unqual;
 import std.utf : stride;
 
-import std2.format.formatfunction : format;
-import std2.format.internal.write : formatValue;
-import std2.format.exception : FormatException, enforceFmt;
+import bformat.formatfunction : format;
+import bformat.write : formatValue;
+import bformat.exception : FormatException, enforceFmt;
 
 private bool testBit(ubyte value, int idx) @safe pure {
 	ubyte bitmask = cast(ubyte)(1 << idx);
@@ -47,7 +47,7 @@ private ubyte setBit(ubyte bitfield, int idx, bool value) @safe pure {
 A general handler for format strings.
 
 This handler centers around the function $(LREF writeUpToNextSpec),
-which parses the $(MREF_ALTTEXT format string, std2.format) until the
+which parses the $(MREF_ALTTEXT format string, bformat) until the
 next format specifier is found. After the call, it provides
 information about this format specifier in its numerous variables.
  */
@@ -110,7 +110,7 @@ struct FormatSpec
     /**
        Precision. Its semantic depends on the format character.
 
-       See $(MREF_ALTTEXT format string, std2.format) for more details.
+       See $(MREF_ALTTEXT format string, bformat) for more details.
        _Default: `UNSPECIFIED`.
      */
     int precision = UNSPECIFIED;
@@ -247,7 +247,7 @@ struct FormatSpec
        until $(LREF writeUpToNextSpec) is called.
 
        Params:
-           fmt = a $(MREF_ALTTEXT format string, std2.format)
+           fmt = a $(MREF_ALTTEXT format string, bformat)
      */
     this(return scope string fmt) @safe pure scope
     {
@@ -258,7 +258,7 @@ struct FormatSpec
        Writes the format string to an output range until the next format
        specifier is found and parse that format specifier.
 
-       See the $(MREF_ALTTEXT description of format strings, std2.format) for more
+       See the $(MREF_ALTTEXT description of format strings, bformat) for more
        details about the format specifier.
 
        Params:
@@ -271,7 +271,7 @@ struct FormatSpec
            format string has been reached.
 
        Throws:
-           A $(REF_ALTTEXT FormatException, FormatException, std2.format)
+           A $(REF_ALTTEXT FormatException, FormatException, bformat)
            when parsing the format specifier did not succeed.
      */
     bool writeUpToNextSpec(OutputRange)(ref OutputRange writer) scope
@@ -598,7 +598,7 @@ struct FormatSpec
 
     package string getCurFmtStr() const @safe
     {
-        //import std2.format.write : formatValue; TODO
+        //import bformat.write : formatValue; TODO
 
         auto w = appender!string();
         auto f = FormatSpec("%s"); // for stringnize
@@ -865,7 +865,7 @@ struct FormatSpec
 Helper function that returns a `FormatSpec` for a single format specifier.
 
 Params:
-    fmt = a $(MREF_ALTTEXT format string, std2.format)
+    fmt = a $(MREF_ALTTEXT format string, bformat)
           containing a single format specifier
     Char = character type of `fmt`
 
@@ -873,7 +873,7 @@ Returns:
     A $(LREF FormatSpec) with the format specifier parsed.
 
 Throws:
-    A $(REF_ALTTEXT FormatException, FormatException, std2.format) when the
+    A $(REF_ALTTEXT FormatException, FormatException, bformat) when the
     format string contains no format specifier or more than a single format
     specifier or when the format specifier is malformed.
   */

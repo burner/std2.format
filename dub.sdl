@@ -1,4 +1,4 @@
-name "std2_format"
+name "bformat_format"
 description "making std.format fast"
 authors "Robert Schadek"
 copyright "Copyright © 2025, Robert Schadek"

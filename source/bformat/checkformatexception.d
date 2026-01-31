@@ -1,9 +1,9 @@
-module std2.format.internal.checkformatexception;
+module bformat.checkformatexception;
 
-import std2.format.internal.write;
-import std2.format.noopsink;
-import std2.format.exception;
-import std2.format.formatfunction2;
+import bformat.write;
+import bformat.noopsink;
+import bformat.exception;
+import bformat.formatfunction2;
 
 // Used to check format strings are compatible with argument types
 enum checkFormatException(alias fmt, Args...) =

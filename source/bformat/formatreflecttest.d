@@ -1,4 +1,4 @@
-module std2.format.formatreflecttest;
+module bformat.formatreflecttest;
 
 import core.exception : AssertError;
 import std.exception : enforce;
@@ -7,8 +7,8 @@ import std.array : appender;
 import std.math.operations : isClose;
 import std.traits : FloatingPointTypeOf;
 
-import std2.format.internal.write;
-import std2.format.formatfunction2;
+import bformat.write;
+import bformat.formatfunction2;
 
 private void formatReflectTest(T)(ref T val, string fmt, string formatted, string fn = __FILE__, size_t ln = __LINE__)
 {

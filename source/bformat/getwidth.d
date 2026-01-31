@@ -1,4 +1,4 @@
-module std2.format.internal.getwidth;
+module bformat.getwidth;
 
 import std.algorithm.searching : all;
 import std.uni : graphemeStride;

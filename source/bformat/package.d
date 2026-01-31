@@ -308,10 +308,10 @@ $(UL
        $(LPAREN)e.g. `"%-$(LPAREN)%s%$(RPAREN)"` instead of `"%$(LPAREN)%s%$(RPAREN)"` $(RPAREN).)
   $(LI Structs, unions, classes and interfaces are formatted by calling a
        `toString` method if available.
-       See $(MREF_ALTTEXT $(D module std2.format.write), std, format, write) for more
+       See $(MREF_ALTTEXT $(D module bformat.write), std, format, write) for more
        details.)
   $(LI Only part of these combinations can be used for reading. See
-       $(MREF_ALTTEXT $(D module std2.format.read), std, format, read) for more
+       $(MREF_ALTTEXT $(D module bformat.read), std, format, read) for more
        detailed information.)
 )
 
@@ -548,11 +548,11 @@ License: $(HTTP boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: $(HTTP walterbright.com, Walter Bright), $(HTTP erdani.com,
 Andrei Alexandrescu), and Kenji Hara
 
-Source: $(PHOBOSSRC std2.format/package.d)
+Source: $(PHOBOSSRC bformat/package.d)
  */
-module std2.format;
+module bformat;
 
-public import std2.format.internal.write;
-public import std2.format.formatfunction;
-public import std2.format.formatfunction2;
-public import std2.format.spec;
+public import bformat.write;
+public import bformat.formatfunction;
+public import bformat.formatfunction2;
+public import bformat.spec;

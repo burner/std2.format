@@ -1,7 +1,7 @@
-module std2.format.internal.writealigned;
+module bformat.writealigned;
 
-import std2.format.spec;
-import std2.format.internal.getwidth;
+import bformat.spec;
+import bformat.getwidth;
 
 import std.range.primitives : put;
 import std.traits : isSomeString;
