@@ -13,13 +13,13 @@ import core.sys.posix.unistd : write, STDOUT_FILENO;
  * Manual flush() is required for any remaining bytes at the end.
  */
 struct BufferedStdoutRange {
-    private ubyte[64] buffer;
+    private char[64] buffer;
     private size_t index = 0;
 
     /**
      * Puts a single ubyte into the buffer. Flushes if buffer is full.
      */
-    void put(ubyte b) {
+    void put(char b) {
         buffer[index++] = b;
         if(index == 64) {
             flush();
@@ -29,7 +29,7 @@ struct BufferedStdoutRange {
     /**
      * Puts a range of ubytes into the buffer, handling each element.
      */
-    void put(R)(R range) if (isInputRange!R && is(ElementType!R : ubyte)) {
+    void put(R)(R range) if (isInputRange!R) {
         foreach(e; range) {
             put(e);
         }
