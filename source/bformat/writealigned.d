@@ -7,55 +7,33 @@ import std.range.primitives : put;
 import std.traits : isSomeString;
 import std.array : appender;
 
-// Performance optimization: Pre-computed padding strings for bulk writes
-private __gshared string[65] spacePadding;
-private __gshared string[65] zeroPadding;
+// Performance optimization: Single large padding string with slicing
+private immutable string spacePadding = "                                                                 ";
+private immutable string zeroPadding =  "00000000000000000000000000000000000000000000000000000000000000000";
 
-static this()
-{
-    // Initialize padding tables on module load
-    for (int i = 0; i < 65; i++)
-    {
-        char[] sp = new char[i];
-        sp[] = ' ';
-        spacePadding[i] = sp.idup;
-        
-        char[] zp = new char[i];
-        zp[] = '0';
-        zeroPadding[i] = zp.idup;
-    }
-}
-
-// Fast bulk padding function - replaces character-by-character loops
+// Fast bulk padding function - uses slicing instead of table lookups
 pragma(inline, true)
 private void writePadding(Writer)(auto ref Writer w, char fillChar, long count)
 {
     if (count <= 0) return;
     
-    // Use pre-computed padding for small counts (0-64)
-    if (count < 65)
+    immutable paddingString = (fillChar == ' ') ? spacePadding : zeroPadding;
+    
+    // Use slicing for small counts (0-512) - no additional allocations
+    if (count <= 512)
     {
-        if (fillChar == ' ')
-        {
-            put(w, spacePadding[cast(size_t)count]);
-        }
-        else if (fillChar == '0')
-        {
-            put(w, zeroPadding[cast(size_t)count]);
-        }
+        put(w, paddingString[0 .. cast(size_t)count]);
         return;
     }
     
-    // For larger counts, write in chunks
+    // For larger counts, write in chunks using the same buffer
     static if (__traits(compiles, { put(w, "  "); }))
     {
-        char[64] buffer;
-        buffer[] = fillChar;
         long remaining = count;
         while (remaining > 0)
         {
-            immutable chunk = (remaining < 64) ? remaining : 64;
-            put(w, buffer[0 .. cast(size_t)chunk]);
+            immutable chunk = (remaining < paddingString.length) ? remaining : paddingString.length;
+            put(w, paddingString[0 .. cast(size_t)chunk]);
             remaining -= chunk;
         }
     }
