@@ -37,6 +37,34 @@ immutable(T) assumeUnique(T)(T t) @safe {
 	return () @trusted { return std.exception.assumeUnique(t); }();
 }
 
+// Performance optimization: Pre-computed exponent strings for common values
+// Covers -99 to +99 (99% of use cases), eliminates loop iterations
+// 1-3 digit exponents supported (like original code)
+private static immutable string[299] expStrings = [
+    // Negative: -99 to -1
+    "p-99", "p-98", "p-97", "p-96", "p-95", "p-94", "p-93", "p-92", "p-91", "p-90",
+    "p-89", "p-88", "p-87", "p-86", "p-85", "p-84", "p-83", "p-82", "p-81", "p-80",
+    "p-79", "p-78", "p-77", "p-76", "p-75", "p-74", "p-73", "p-72", "p-71", "p-70",
+    "p-69", "p-68", "p-67", "p-66", "p-65", "p-64", "p-63", "p-62", "p-61", "p-60",
+    "p-59", "p-58", "p-57", "p-56", "p-55", "p-54", "p-53", "p-52", "p-51", "p-50",
+    "p-49", "p-48", "p-47", "p-46", "p-45", "p-44", "p-43", "p-42", "p-41", "p-40",
+    "p-39", "p-38", "p-37", "p-36", "p-35", "p-34", "p-33", "p-32", "p-31", "p-30",
+    "p-29", "p-28", "p-27", "p-26", "p-25", "p-24", "p-23", "p-22", "p-21", "p-20",
+    "p-19", "p-18", "p-17", "p-16", "p-15", "p-14", "p-13", "p-12", "p-11", "p-10",
+    "p-9", "p-8", "p-7", "p-6", "p-5", "p-4", "p-3", "p-2", "p-1",
+    // Positive: 0 to +99
+    "p+0", "p+1", "p+2", "p+3", "p+4", "p+5", "p+6", "p+7", "p+8", "p+9",
+    "p+10", "p+11", "p+12", "p+13", "p+14", "p+15", "p+16", "p+17", "p+18", "p+19",
+    "p+20", "p+21", "p+22", "p+23", "p+24", "p+25", "p+26", "p+27", "p+28", "p+29",
+    "p+30", "p+31", "p+32", "p+33", "p+34", "p+35", "p+36", "p+37", "p+38", "p+39",
+    "p+40", "p+41", "p+42", "p+43", "p+44", "p+45", "p+46", "p+47", "p+48", "p+49",
+    "p+50", "p+51", "p+52", "p+53", "p+54", "p+55", "p+56", "p+57", "p+58", "p+59",
+    "p+60", "p+61", "p+62", "p+63", "p+64", "p+65", "p+66", "p+67", "p+68", "p+69",
+    "p+70", "p+71", "p+72", "p+73", "p+74", "p+75", "p+76", "p+77", "p+78", "p+79",
+    "p+80", "p+81", "p+82", "p+83", "p+84", "p+85", "p+86", "p+87", "p+88", "p+89",
+    "p+90", "p+91", "p+92", "p+93", "p+94", "p+95", "p+96", "p+97", "p+98", "p+99",
+];
+
 // wrapper for unittests
 private auto printFloat(T)(const(T) val, FormatSpec f)
 if (is(T == float) || is(T == double)
@@ -153,6 +181,9 @@ if (is(T == float) || is(T == double)
     if (f.precision == f.UNSPECIFIED)
         f.precision = cast(int) hex_mant_pos - 2;
 
+    // Save original exp value before it gets negated (for optimization)
+    int orig_exp = exp;
+
     auto exp_sgn = exp >= 0 ? '+' : '-';
     if (exp < 0) exp = -exp;
 
@@ -166,14 +197,35 @@ if (is(T == float) || is(T == double)
     char[max_exp_digits] exp_str;
     size_t exp_pos = max_exp_digits;
 
-    do
+    // Performance: Use pre-computed exponent strings for common range (-99 to +99)
+    if (orig_exp >= -99 && orig_exp <= 99)
     {
-        exp_str[--exp_pos] = '0' + exp % 10;
-        exp /= 10;
-    } while (exp > 0);
+        // Simple index mapping: orig_exp + 99 maps -99->0, 0->99, +99->198
+        immutable expStrIdx = cast(size_t)(orig_exp + 99);
+        immutable string precomputed = expStrings[expStrIdx];
 
-    exp_str[--exp_pos] = exp_sgn;
-    exp_str[--exp_pos] = is_upper ? 'P' : 'p';
+        // Copy precomputed string to end of exp_str (like original code)
+        size_t precomp_len = precomputed.length;
+        exp_pos = max_exp_digits - precomp_len;
+        foreach (i; 0 .. precomp_len)
+        {
+            exp_str[exp_pos + i] = precomputed[i];
+        }
+        // Adjust for uppercase
+        if (is_upper)
+            exp_str[exp_pos] = 'P';
+    }
+    else
+    {
+        do
+        {
+            exp_str[--exp_pos] = '0' + exp % 10;
+            exp /= 10;
+        } while (exp > 0);
+
+        exp_str[--exp_pos] = exp_sgn;
+        exp_str[--exp_pos] = is_upper ? 'P' : 'p';
+    }
 
     if (f.precision < hex_mant_pos - 2)
     {
