@@ -3,6 +3,7 @@ module bformat.buffered_stderr;
 import std.range.primitives;
 import std.algorithm : copy;
 import std.array : array;
+import std.traits;
 import std.stdio;
 import core.sys.posix.unistd : write, STDERR_FILENO;
 
@@ -30,19 +31,35 @@ struct BufferedStderrRange {
     /**
      * Puts a range of ubytes into buffer using batch copying for performance.
      * Optimizes by copying large chunks at once instead of character-by-character.
+     * SIMD optimization: Uses slice assignment for static arrays to enable compiler vectorization.
      */
     void put(R)(R range) if (isInputRange!R) {
-        // Fast path: try to copy as much as possible at once
+        // SIMD OPTIMIZATION: Fast path for static arrays (strings, static arrays)
+        // Slice assignment allows compiler to vectorize with SIMD instructions
+        static if (isArray!R && __traits(isStaticArray, R)) {
+            immutable len = range.length;
+            immutable space = buffer.length - index;
+            
+            if (len <= space) {
+                // Single slice operation - fully vectorizable by LDC/GCC/DMD
+                buffer[index .. index + len] = range[];
+                index += len;
+                if (index == buffer.length) flush();
+                return;
+            }
+        }
+        
+        // Fallback to character-by-character for dynamic ranges
         size_t remaining = buffer.length - index;
         size_t count = 0;
         auto r = range.save;
-
+        
         // Count how many elements fit in remaining buffer space
         while (!r.empty && count < remaining) {
             r.popFront();
             count++;
         }
-
+        
         // Batch copy all elements that fit at once
         if (count > 0) {
             size_t i = index;
@@ -54,14 +71,14 @@ struct BufferedStderrRange {
                 r2.popFront();
             }
             index = i;
-
+            
             // Flush if buffer is now full
             if (index == buffer.length) {
                 flush();
                 index = 0;
             }
         }
-
+        
         // Recursively handle any remaining elements
         if (!r.empty) {
             put(r);
