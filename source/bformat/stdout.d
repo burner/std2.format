@@ -1,4 +1,4 @@
-module bformat.print;
+module bformat.stdout;
 
 import std.range.primitives;
 import std.array : appender;
@@ -6,26 +6,26 @@ import bformat.formatfunction;
 import bformat.formatfunction2;
 import bformat.buffered_stdout;
 
-void print(string fmt) {
+void stdOut(string fmt) {
 	BufferedStdoutRange oRng;
 	oRng.put(fmt);
 	oRng.flush();
 }
 
-void println(string fmt) {
+void stdOutln(string fmt) {
 	BufferedStdoutRange oRng;
 	oRng.put(fmt);
 	oRng.put("\n");
 	oRng.flush();
 }
 
-void printf(Args...)(string fmt, Args args) {
+void stdOutf(Args...)(string fmt, Args args) {
 	BufferedStdoutRange oRng;
 	formattedWrite(oRng, fmt, args);
 	oRng.flush();
 }
 
-void printfln(Args...)(string fmt, Args args) {
+void stdOutfln(Args...)(string fmt, Args args) {
 	BufferedStdoutRange oRng;
 	formattedWrite(oRng, fmt, args);
 	oRng.put("\n");
@@ -86,101 +86,101 @@ version (Posix)
 
 	unittest
 	{
-		assert(captureStdout({ print("hello"); }) == "hello");
+		assert(captureStdout({ stdOut("hello"); }) == "hello");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ print(""); }) == "");
+		assert(captureStdout({ stdOut(""); }) == "");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ print("line1\nline2"); }) == "line1\nline2");
+		assert(captureStdout({ stdOut("line1\nline2"); }) == "line1\nline2");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ print(sixtyFourChars); }) == sixtyFourChars);
+		assert(captureStdout({ stdOut(sixtyFourChars); }) == sixtyFourChars);
 	}
 
 	unittest
 	{
-		assert(captureStdout({ print(overSixtyFour); }) == overSixtyFour);
+		assert(captureStdout({ stdOut(overSixtyFour); }) == overSixtyFour);
 	}
 
 	unittest
 	{
-		assert(captureStdout({ println("alpha"); }) == "alpha\n");
+		assert(captureStdout({ stdOutln("alpha"); }) == "alpha\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ println(""); }) == "\n");
+		assert(captureStdout({ stdOutln(""); }) == "\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ println("beta\n"); }) == "beta\n\n");
+		assert(captureStdout({ stdOutln("beta\n"); }) == "beta\n\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ println(sixtyFourChars); }) == sixtyFourChars ~ "\n");
+		assert(captureStdout({ stdOutln(sixtyFourChars); }) == sixtyFourChars ~ "\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ println(overSixtyFour); }) == overSixtyFour ~ "\n");
+		assert(captureStdout({ stdOutln(overSixtyFour); }) == overSixtyFour ~ "\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printf("%s", "items"); }) == "items");
+		assert(captureStdout({ stdOutf("%s", "items"); }) == "items");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printf("%d", -42); }) == "-42");
+		assert(captureStdout({ stdOutf("%d", -42); }) == "-42");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printf("%.2f", 3.14159); }) == "3.14");
+		assert(captureStdout({ stdOutf("%.2f", 3.14159); }) == "3.14");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printf("%5s", "hi"); }) == "   hi");
+		assert(captureStdout({ stdOutf("%5s", "hi"); }) == "   hi");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printf("%s %d %x", "count", 255, 255); }) == "count 255 ff");
+		assert(captureStdout({ stdOutf("%s %d %x", "count", 255, 255); }) == "count 255 ff");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printfln("%s", "done"); }) == "done\n");
+		assert(captureStdout({ stdOutfln("%s", "done"); }) == "done\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printfln("%d", 123); }) == "123\n");
+		assert(captureStdout({ stdOutfln("%d", 123); }) == "123\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printfln("%.1f", 2.5); }) == "2.5\n");
+		assert(captureStdout({ stdOutfln("%.1f", 2.5); }) == "2.5\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printfln("%6s", "ok"); }) == "    ok\n");
+		assert(captureStdout({ stdOutfln("%6s", "ok"); }) == "    ok\n");
 	}
 
 	unittest
 	{
-		assert(captureStdout({ printfln("%s %d %X", "hex", 16, 255); }) == "hex 16 FF\n");
+		assert(captureStdout({ stdOutfln("%s %d %X", "hex", 16, 255); }) == "hex 16 FF\n");
 	}
 }

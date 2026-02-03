@@ -556,4 +556,4 @@ public import bformat.write;
 public import bformat.formatfunction;
 public import bformat.formatfunction2;
 public import bformat.spec;
-public import bformat.print;
+public import bformat.stdout;
