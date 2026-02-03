@@ -16,16 +16,16 @@ pragma(inline, true)
 private void writePadding(Writer)(auto ref Writer w, char fillChar, long count)
 {
     if (count <= 0) return;
-    
+
     immutable paddingString = (fillChar == ' ') ? spacePadding : zeroPadding;
-    
+
     // Use slicing for small counts (0-512) - no additional allocations
     if (count <= 512)
     {
         put(w, paddingString[0 .. cast(size_t)count]);
         return;
     }
-    
+
     // For larger counts, write in chunks using the same buffer
     static if (__traits(compiles, { put(w, "  "); }))
     {
@@ -41,6 +41,28 @@ private void writePadding(Writer)(auto ref Writer w, char fillChar, long count)
     {
         // Fallback for writers that only support single char put
         foreach (_; 0 .. count) put(w, fillChar);
+    }
+}
+
+// SIMD-friendly bulk write: Use 64-byte chunks for larger counts
+pragma(inline, true)
+private void bulkWrite(Writer)(auto ref Writer w, char fillChar, size_t count)
+{
+    if (count == 0) return;
+
+    immutable paddingString = (fillChar == ' ') ? spacePadding : zeroPadding;
+
+    // Write 64 bytes at a time (enables vectorization on LDC)
+    while (count >= 64)
+    {
+        put(w, paddingString[0 .. 64]);
+        count -= 64;
+    }
+
+    // Write remaining bytes
+    if (count > 0)
+    {
+        put(w, paddingString[0 .. count]);
     }
 }
 
@@ -164,13 +186,11 @@ void writeAligned(Writer)(auto ref Writer w,
     {
         if (f.flEqual)
         {
-            foreach (i ; 0 .. delta / 2 + ((delta % 2 == 1 && !f.flDash) ? 1 : 0))
-                put(w, ' ');
+            bulkWrite(w, ' ', cast(size_t)(delta / 2 + ((delta % 2 == 1 && !f.flDash) ? 1 : 0)));
         }
         else if (!f.flDash)
         {
-            foreach (i ; 0 .. delta)
-                put(w, ' ');
+            bulkWrite(w, ' ', cast(size_t)delta);
         }
     }
 
@@ -231,8 +251,8 @@ void writeAligned(Writer)(auto ref Writer w,
     }
     else
     {
-        foreach (i;0 .. pregrouped)
-            put(w, '0');
+        if (pregrouped > 0)
+            bulkWrite(w, '0', cast(size_t)pregrouped);
         put(w, grouped);
     }
 
@@ -241,8 +261,8 @@ void writeAligned(Writer)(auto ref Writer w,
         put(w, fracts);
 
     // trailing zeros
-    foreach (i ; 0 .. trailingZeros)
-        put(w, '0');
+    if (trailingZeros > 0)
+        bulkWrite(w, '0', cast(size_t)trailingZeros);
 
     // suffix
     put(w, suffix);
@@ -252,13 +272,11 @@ void writeAligned(Writer)(auto ref Writer w,
     {
         if (f.flEqual)
         {
-            foreach (i ; 0 .. delta / 2 + ((delta % 2 == 1 && f.flDash) ? 1 : 0))
-                put(w, ' ');
+            bulkWrite(w, ' ', cast(size_t)(delta / 2 + ((delta % 2 == 1 && f.flDash) ? 1 : 0)));
         }
         else if (f.flDash)
         {
-            foreach (i ; 0 .. delta)
-                put(w, ' ');
+            bulkWrite(w, ' ', cast(size_t)delta);
         }
     }
 }
