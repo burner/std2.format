@@ -27,7 +27,7 @@ import bformat.checkformatexception;
 import bformat.formatfunction2;
 import bformat.getwidth : getWidth;
 import std.math.exponential : log2;
-import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
+import std.math.operations : nextUp;
 import std.math.operations : nextUp;
 import std.math.traits : isInfinity;
 import std.meta : AliasSeq;
@@ -122,25 +122,17 @@ private void formatValueImplUlong(Writer)(auto ref Writer w, ulong arg, in bool 
     const bool zero = arg == 0;
     char[64] digits = void;
     size_t pos = digits.length - 1;
+
+    /* SIMD-friendly: Select digit table outside loop to avoid branches */
+    immutable(char)[] digitTable = (base == 10) ? decDigits[] :
+                                   (base == 16) ? ((f.spec == 'x' || f.spec == 'a') ? hexLower[] : hexUpper[]) :
+                                   decDigits[];
+
     do
     {
-        /* Optimized: Use lookup tables instead of arithmetic and branches */
+        /* Branch-free: Single lookup per digit, enables vectorization */
         immutable idx = cast(size_t)(arg % base);
-        if (base == 10)
-        {
-            digits[pos--] = decDigits[idx];
-        }
-        else if (base == 16)
-        {
-            if (f.spec == 'x' || f.spec == 'a')
-                digits[pos--] = hexLower[idx];
-            else
-                digits[pos--] = hexUpper[idx];
-        }
-        else
-        {
-            digits[pos--] = decDigits[idx];  // binary/octal use decimal digits
-        }
+        digits[pos--] = digitTable[idx];
         arg /= base;
     } while (arg > 0);
 
@@ -1737,3 +1729,4 @@ void formatValue(Writer, T)(auto ref Writer w, auto ref T val, scope const ref F
     writer.formatValue(42.0, spec);
     assert(writer.data == "00101010 = +4.200000e+01");
 }
+
