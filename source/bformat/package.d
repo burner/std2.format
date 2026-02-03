@@ -72,6 +72,26 @@ $(TR
     $(TD $(I stdout))
     $(TD $(REF_ALTTEXT $(D stdOutfln), stdOutfln, stdout))
     $(TD Writes formatted output to standard output followed by a newline.)
+)
+$(TR
+    $(TD $(I stderr))
+    $(TD $(REF_ALTTEXT $(D stdErr), stdErr, stderr))
+    $(TD Writes a string to standard error.)
+)
+$(TR
+    $(TD $(I stderr))
+    $(TD $(REF_ALTTEXT $(D stdErrln), stdErrln, stderr))
+    $(TD Writes a string to standard error followed by a newline.)
+)
+$(TR
+    $(TD $(I stderr))
+    $(TD $(REF_ALTTEXT $(D stdErrf), stdErrf, stderr))
+    $(TD Writes formatted output to standard error using format specifiers.)
+)
+$(TR
+    $(TD $(I stderr))
+    $(TD $(REF_ALTTEXT $(D stdErrfln), stdErrfln, stderr))
+    $(TD Writes formatted output to standard error followed by a newline.)
 ))
 
 Limitation: This package does not support localization, but
@@ -577,3 +597,4 @@ public import bformat.formatfunction;
 public import bformat.formatfunction2;
 public import bformat.spec;
 public import bformat.stdout;
+public import bformat.stderr;
