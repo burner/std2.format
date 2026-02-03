@@ -11,6 +11,20 @@ import std.array : appender;
 private immutable string spacePadding = "                                                                 ";
 private immutable string zeroPadding =  "00000000000000000000000000000000000000000000000000000000000000000";
 
+// Pre-built zero padding strings with separators (common cases)
+private immutable string zeroPad1 = "0";
+private immutable string zeroPad2 = "00";
+private immutable string zeroPad3 = "000";
+private immutable string zeroPad4 = "0,0,0";
+private immutable string zeroPad5 = "0,0,0,0";
+private immutable string zeroPad6 = "0,0,0,0,0";
+private immutable string zeroPad7 = "0,0,0,0,0,0";
+private immutable string zeroPad8 = "0,0,0,0,0,0,0";
+private immutable string zeroPad9 = "0,0,0,0,0,0,0,0";
+private immutable string zeroPad10 = "0,0,0,0,0,0,0,0,0";
+private immutable string zeroPad11 = "0,0,0,0,0,0,0,0,0,0";
+private immutable string zeroPad12 = "0,0,0,0,0,0,0,0,0,0,0";
+
 // Fast bulk padding function - uses slicing instead of table lookups
 pragma(inline, true)
 private void writePadding(Writer)(auto ref Writer w, char fillChar, long count)
@@ -229,8 +243,7 @@ void writeAligned(Writer)(auto ref Writer w,
                 put(w, f.separatorChar);
         }
         else
-            foreach (i ; 0 .. delta)
-                put(w, '0');
+            bulkWrite(w, '0', cast(size_t)delta);
     }
 
     // grouped content
