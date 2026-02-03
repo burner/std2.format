@@ -9,8 +9,9 @@ import bformat.buffered_stdout;
 /**
 Writes a string to standard output.
 
-The function uses a 64-byte buffer for efficient I/O and automatically
-flushes the buffer after writing. No newline is appended to the output.
+The function uses a 4096-byte page-aligned buffer for optimal kernel I/O
+performance and automatically flushes buffer after writing. No newline is
+appended to the output.
 
 Params:
     fmt = The string to write to standard output.
@@ -29,8 +30,9 @@ void stdOut(string fmt) {
 /**
 Writes a string to standard output followed by a newline.
 
-The function uses a 64-byte buffer for efficient I/O, appends a
-newline after the string, and automatically flushes the buffer after writing.
+The function uses a 4096-byte page-aligned buffer for optimal kernel I/O
+performance, appends a newline after the string, and automatically flushes
+buffer after writing.
 
 Params:
     fmt = The string to write to standard output.
@@ -49,10 +51,10 @@ void stdOutln(string fmt) {
 /**
 Writes formatted output to standard output using format specifiers.
 
-The function uses a 64-byte buffer for efficient I/O and automatically
-flushes the buffer after writing. No newline is appended to the output.
-All format specifiers supported by this package can be used (see package
-documentation for details on format strings and specifiers).
+The function uses a 4096-byte page-aligned buffer for optimal kernel I/O
+performance and automatically flushes buffer after writing. No newline is
+appended to the output. All format specifiers supported by this package can
+be used (see package documentation for details on format strings and specifiers).
 
 Params:
     fmt = A $(I format string) containing format specifiers.
@@ -82,10 +84,10 @@ void stdOutf(Args...)(string fmt, Args args) {
 /**
 Writes formatted output to standard output followed by a newline.
 
-The function uses a 64-byte buffer for efficient I/O, appends a
-newline after the formatted output, and automatically flushes the buffer.
-All format specifiers supported by this package can be used (see package
-documentation for details on format strings and specifiers).
+The function uses a 4096-byte page-aligned buffer for optimal kernel I/O
+performance, appends a newline after the formatted output, and automatically
+flushes the buffer. All format specifiers supported by this package can be
+used (see package documentation for details on format strings and specifiers).
 
 Params:
     fmt = A $(I format string) containing format specifiers.
