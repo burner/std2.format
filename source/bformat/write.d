@@ -113,6 +113,7 @@ if (is(IntegralTypeOf!T) && !is(T == enum))
 }
 
 // Helper function for `formatValueImpl` that avoids template bloat
+pragma(inline, true)
 private void formatValueImplUlong(Writer)(auto ref Writer w, ulong arg, in bool negative,
                                                 scope const ref FormatSpec f)
 {
@@ -123,12 +124,23 @@ private void formatValueImplUlong(Writer)(auto ref Writer w, ulong arg, in bool 
     size_t pos = digits.length - 1;
     do
     {
-        /* `cast(char)` is needed because value range propagation (VRP) cannot
-         * analyze `base` because it’s computed in a separate function
-         * (`baseOfSpec`). */
-        digits[pos--] = cast(char) ('0' + arg % base);
-        if (base > 10 && digits[pos + 1] > '9')
-            digits[pos + 1] += ((f.spec == 'x' || f.spec == 'a') ? 'a' : 'A') - '0' - 10;
+        /* Optimized: Use lookup tables instead of arithmetic and branches */
+        immutable idx = cast(size_t)(arg % base);
+        if (base == 10)
+        {
+            digits[pos--] = decDigits[idx];
+        }
+        else if (base == 16)
+        {
+            if (f.spec == 'x' || f.spec == 'a')
+                digits[pos--] = hexLower[idx];
+            else
+                digits[pos--] = hexUpper[idx];
+        }
+        else
+        {
+            digits[pos--] = decDigits[idx];  // binary/octal use decimal digits
+        }
         arg /= base;
     } while (arg > 0);
 
@@ -260,6 +272,7 @@ private void formatValueImplUlong(Writer)(auto ref Writer w, ulong arg, in bool 
                  (f.spec == 'g' || f.spec == 'G') ? PrecisionType.allDigits : PrecisionType.fractionalDigits);
 }
 
+pragma(inline, true)
 private uint baseOfSpec(in char spec) @safe pure
 {
     typeof(return) base =
@@ -273,9 +286,15 @@ private uint baseOfSpec(in char spec) @safe pure
 
     enforceFmt(base > 0,
         "incompatible format character for integral argument: %" ~ spec);
-
+    
     return base;
 }
+
+// Performance optimization: Pre-computed digit lookup tables
+// These eliminate arithmetic operations and branches in the hot integer formatting path
+static immutable char[10] decDigits = "0123456789";
+static immutable char[16] hexLower = "0123456789abcdef";
+static immutable char[16] hexUpper = "0123456789ABCDEF";
 
 /*
     Floating-point values are formatted like $(REF printf, core, stdc, stdio)
@@ -588,7 +607,6 @@ if (isInputRange!T)
 // character formatting with ecaping
 void formatChar(Writer)(ref Writer w, in dchar c, in char quote)
 {
-    string fmt;
     if (isGraphical(c))
     {
         if (c == quote || c == '\\')
@@ -600,24 +618,27 @@ void formatChar(Writer)(ref Writer w, in dchar c, in char quote)
     {
         if (c < 0x20)
         {
-            foreach (i, k; "\n\r\t\a\b\f\v\0")
+            // Optimized: Use switch instead of loop (branchless for common cases)
+            switch (c)
             {
-                if (c == k)
-                {
-                    put(w, '\\');
-                    put(w, "nrtabfv0"[i]);
-                    return;
-                }
+                case '\n': put(w, "\\n"); return;
+                case '\r': put(w, "\\r"); return;
+                case '\t': put(w, "\\t"); return;
+                case '\a': put(w, "\\a"); return;
+                case '\b': put(w, "\\b"); return;
+                case '\f': put(w, "\\f"); return;
+                case '\v': put(w, "\\v"); return;
+                case '\0': put(w, "\\0"); return;
+                default: break;
             }
         }
-        fmt = "\\x%02X";
+        formattedWrite(w, "\\x%02X", cast(uint) c);
+        return;
     }
     else if (c <= 0xFFFF)
-        fmt = "\\u%04X";
+        formattedWrite(w, "\\u%04X", cast(uint) c);
     else
-        fmt = "\\U%08X";
-
-    formattedWrite(w, fmt, cast(uint) c);
+        formattedWrite(w, "\\U%08X", cast(uint) c);
 }
 
 /*
@@ -1227,6 +1248,7 @@ T getNth(string kind, alias Condition, T, A...)(uint index, A args)
     }
 }
 
+pragma(inline, true)
 private bool needToSwapEndianess(scope const ref FormatSpec f) @safe pure
 {
     return endian == Endian.littleEndian && f.flPlus

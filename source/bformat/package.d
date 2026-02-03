@@ -598,3 +598,7 @@ public import bformat.formatfunction2;
 public import bformat.spec;
 public import bformat.stdout;
 public import bformat.stderr;
+
+// Performance optimization modules (currently disabled due to implementation issues)
+// public import bformat.speccache;
+// public import bformat.bufferpool;
