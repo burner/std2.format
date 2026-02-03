@@ -6,12 +6,39 @@ import bformat.formatfunction;
 import bformat.formatfunction2;
 import bformat.buffered_stdout;
 
+/**
+Writes a string to standard output.
+
+The function uses a 64-byte buffer for efficient I/O and automatically
+flushes the buffer after writing. No newline is appended to the output.
+
+Params:
+    fmt = The string to write to standard output.
+
+See_Also:
+    $(LREF stdOutln) for a variant that appends a newline,
+    $(LREF stdOutf) for formatted output,
+    $(LREF format) for formatting to a string.
+*/
 void stdOut(string fmt) {
 	BufferedStdoutRange oRng;
 	oRng.put(fmt);
 	oRng.flush();
 }
 
+/**
+Writes a string to standard output followed by a newline.
+
+The function uses a 64-byte buffer for efficient I/O, appends a
+newline after the string, and automatically flushes the buffer after writing.
+
+Params:
+    fmt = The string to write to standard output.
+
+See_Also:
+    $(LREF stdOut) for a variant without a newline,
+    $(LREF stdOutfln) for formatted output with a newline.
+*/
 void stdOutln(string fmt) {
 	BufferedStdoutRange oRng;
 	oRng.put(fmt);
@@ -19,12 +46,66 @@ void stdOutln(string fmt) {
 	oRng.flush();
 }
 
+/**
+Writes formatted output to standard output using format specifiers.
+
+The function uses a 64-byte buffer for efficient I/O and automatically
+flushes the buffer after writing. No newline is appended to the output.
+All format specifiers supported by this package can be used (see package
+documentation for details on format strings and specifiers).
+
+Params:
+    fmt = A $(I format string) containing format specifiers.
+    args = A variadic list of arguments to be formatted according to $(D fmt).
+
+Throws:
+    A $(LREF FormatException) if formatting did not succeed.
+
+See_Also:
+    $(LREF stdOutfln) for a variant that appends a newline,
+    $(LREF stdOut) for simple string output,
+    $(LREF format) for formatting to a string.
+
+Example:
+---
+stdOutf("%s %d", "Score:", 42); // Writes: "Score: 42"
+stdOutf("%.2f", 3.14159);      // Writes: "3.14"
+stdOutf("%5s", "hi");           // Writes: "   hi"
+---
+*/
 void stdOutf(Args...)(string fmt, Args args) {
 	BufferedStdoutRange oRng;
 	formattedWrite(oRng, fmt, args);
 	oRng.flush();
 }
 
+/**
+Writes formatted output to standard output followed by a newline.
+
+The function uses a 64-byte buffer for efficient I/O, appends a
+newline after the formatted output, and automatically flushes the buffer.
+All format specifiers supported by this package can be used (see package
+documentation for details on format strings and specifiers).
+
+Params:
+    fmt = A $(I format string) containing format specifiers.
+    args = A variadic list of arguments to be formatted according to $(D fmt).
+
+Throws:
+    A $(LREF FormatException) if formatting did not succeed.
+
+See_Also:
+    $(LREF stdOutf) for a variant without a newline,
+    $(LREF stdOutln) for simple string output with a newline,
+    $(LREF format) for formatting to a string.
+
+Example:
+---
+stdOutfln("%s %d", "Count:", 42); // Writes: "Count: 42\n"
+stdOutfln("%.1f", 2.5);          // Writes: "2.5\n"
+stdOutfln("%6s", "ok");            // Writes: "    ok\n"
+---
+*/
 void stdOutfln(Args...)(string fmt, Args args) {
 	BufferedStdoutRange oRng;
 	formattedWrite(oRng, fmt, args);

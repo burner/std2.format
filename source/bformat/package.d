@@ -52,6 +52,26 @@ $(TR
     $(TD $(MREF_ALTTEXT $(D spec), std, format, spec))
     $(TD $(REF_ALTTEXT $(D singleSpec), singleSpec, std, format, spec))
     $(TD Helper function that returns a `FormatSpec` for a single format specifier.)
+)
+$(TR
+    $(TD $(I stdout))
+    $(TD $(REF_ALTTEXT $(D stdOut), stdOut, stdout))
+    $(TD Writes a string to standard output.)
+)
+$(TR
+    $(TD $(I stdout))
+    $(TD $(REF_ALTTEXT $(D stdOutln), stdOutln, stdout))
+    $(TD Writes a string to standard output followed by a newline.)
+)
+$(TR
+    $(TD $(I stdout))
+    $(TD $(REF_ALTTEXT $(D stdOutf), stdOutf, stdout))
+    $(TD Writes formatted output to standard output using format specifiers.)
+)
+$(TR
+    $(TD $(I stdout))
+    $(TD $(REF_ALTTEXT $(D stdOutfln), stdOutfln, stdout))
+    $(TD Writes formatted output to standard output followed by a newline.)
 ))
 
 Limitation: This package does not support localization, but
