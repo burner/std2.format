@@ -123,7 +123,7 @@ version (Posix)
 	import core.stdc.errno : errno, EINTR;
 	import core.sys.posix.unistd : pipe, dup, dup2, close, read, STDOUT_FILENO;
 
-	private string captureStdout(void delegate() action)
+	public string captureStdout(void delegate() action)
 	{
 		int[2] fds;
 		enforce(pipe(fds) == 0, "pipe failed");

@@ -7,6 +7,10 @@ import std.traits;
 import std.stdio;
 import core.sys.posix.unistd : write, STDOUT_FILENO;
 
+version (Posix) {
+	import bformat.stdout : captureStdout;
+}
+
 
 /**
  * A buffered output range that writes to stdout only when its 4096-byte buffer is full.
@@ -96,25 +100,35 @@ struct BufferedStdoutRange {
     }
 }
 
- unittest {
-    // Test single puts
-    auto buf = BufferedStdoutRange();
-    buf.put(65); // 'A'
-    buf.put(66); // 'B'
-    // Buffer not full, nothing written yet
+ version (Posix) {
+ 	unittest {
+ 		// Test single puts
+ 		auto captured = captureStdout({
+ 			auto buf = BufferedStdoutRange();
+ 			buf.put(65); // 'A'
+ 			buf.put(66); // 'B'
+ 			// Buffer not full, nothing written yet
 
-    // Fill buffer to 4096 bytes
-    foreach(i; 2 .. 4096) {
-        buf.put(cast(char)(i + 65));
-    }
-    // Now should have written 4096 bytes to stdout
+ 			// Fill buffer to 4096 bytes
+ 			foreach(i; 2 .. 4096) {
+ 				buf.put(cast(char)(i + 65));
+ 			}
+ 			// Now should have written 4096 bytes to stdout
 
-    // Add more
-    buf.put(67); // 'C'
-    buf.flush(); // Should write 'C'
+ 			// Add more
+ 			buf.put(67); // 'C'
+ 			buf.flush(); // Should write 'C'
 
-    // Test with range
-    ubyte[] testRange = [68, 69, 70]; // 'D', 'E', 'F'
-    copy(testRange, buf);
-    buf.flush(); // Should write 'D', 'E', 'F'
+ 			// Test with range using individual puts instead of copy
+ 			foreach(b; [68, 69, 70]) { // 'D', 'E', 'F'
+ 				buf.put(cast(char)b);
+ 			}
+ 			buf.flush(); // Should write 'D', 'E', 'F'
+ 		});
+ 		// Verify that output was captured and contains expected bytes
+ 		assert(captured.length > 0, "No output captured");
+ 		assert(captured[0] == 'A');
+ 		assert(captured[1] == 'B');
+ 		assert(captured[4096] == 'C');
+ 	}
  }
