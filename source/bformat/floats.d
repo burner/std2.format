@@ -17,11 +17,9 @@ module bformat.floats;
 import core.bitop : bsr;
 import core.math : abs = fabs;
 import core.memory;
-import std.algorithm.comparison : max;
 import std.array : appender;
 import std.math.constants : E, PI, PI_2, PI_4, M_1_PI, M_2_PI, M_2_SQRTPI, LN10, LN2, LOG2, LOG2E, LOG2T, LOG10E, SQRT2, SQRT1_2;
 import std.math.exponential : log2;
-import std.math.hardware; // cannot be selective, because FloatingPointControl might not be defined
 import std.math.operations : nextDown, nextUp, nextDown;
 import std.traits : isFloatingPoint;
 import bformat.rounding : RoundingClass, RoundingMode, round;
@@ -29,7 +27,6 @@ import bformat.writealigned : writeAligned, PrecisionType;
 
 import bformat.spec : FormatSpec;
 import bformat.compilerhelpers;
-import bformat.writealigned;
 import bformat.noopsink;
 
 immutable(T) assumeUnique(T)(T t) @safe {

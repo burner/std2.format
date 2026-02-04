@@ -148,8 +148,9 @@ version (Posix)
 			auto count = read(fds[0], buffer.ptr, buffer.length);
 			if (count == 0)
 				break;
-			if (count > 0)
+ 			if (count > 0)
 			{
+				assert(count <= buffer.length, "Buffer overflow in stdOut");
 				sink.put(cast(const(char)[]) buffer[0 .. count]);
 				continue;
 			}

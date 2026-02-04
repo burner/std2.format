@@ -150,6 +150,7 @@ version (Posix)
 				break;
 			if (count > 0)
 			{
+				assert(count <= buffer.length, "Buffer overflow in stdErr");
 				sink.put(cast(const(char)[]) buffer[0 .. count]);
 				continue;
 			}
