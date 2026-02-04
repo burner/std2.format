@@ -248,14 +248,8 @@ import bformat.compilerhelpers;
     // string literal from valid UTF sequence is encoding free.
     static foreach (StrType; AliasSeq!(string, wstring, dstring))
     {
-        // DISABLED: Unicode range tests causing garbage output due to cast(StrType) issues
-        // Uncomment to enable: version=EnableLargeTests
-
         // Valid and printable (ASCII)
         formatTest([cast(StrType)"hello"],
-// DISABLED: Unicode range tests causing garbage output due to cast(StrType) issues
-// Uncomment to enable: version=EnableLargeTests
-
                    `["hello"]`);
 
         // 1 character escape sequences (' is not escaped in strings)
@@ -777,56 +771,4 @@ import bformat.compilerhelpers;
     assert(writer.data == " 4.200e+01");
 }
 
-}
-
-@safe pure unittest
-{
-    auto spec = singleSpec("%10.3e");
-    auto writer = appender!string();
-    writer.formatValue(42.0, spec);
-
-    assert(writer.data == " 4.200e+01");
-}
-
-}
-// DISABLED: Unicode range tests causing garbage output due to cast(StrType) issues
-// Uncomment to enable: version=EnableLargeTests
-
-version(EnableLargeTests)
-{
-    // Valid and non-printable code point (<= U+FF)
-    formatTest([cast(StrType)"hello"],
-               `["hello"]`);
-    // Valid and non-printable code point (<= U+FF)
-    formatTest([cast(StrType)"\x10\x1F\x20test"],
-               `["\x10\x1F test"]`);
-    // Valid and non-printable code point (<= U+FF)
-    formatTest([cast(StrType)"\x10\x1F\x20test"],
-               `["\x10\x1F test"]`);
-}
-}
-
-@safe pure unittest
-{
-    auto spec = singleSpec("%10.3e");
-    auto writer = appender!string();
-    writer.formatValue(42.0, spec);
-
-    assert(writer.data == " 4.200e+01");
-}
-
-// DISABLED: Unicode range tests causing garbage output due to cast(StrType) issues
-// Uncomment to enable: version=EnableLargeTests
-
-version(EnableLargeTests)
-{
-    // Valid and non-printable code point (<= U+FF)
-    formatTest([cast(StrType)"hello"],
-               `["hello"]`);
-    // Valid and non-printable code point (<= U+FF)
-    formatTest([cast(StrType)"\x10\x1F\x20test"],
-               `["\x10\x1F test"]`);
-    // Valid and non-printable code point (<= U+FF)
-    formatTest([cast(StrType)"\x10\x1F\x20test"],
-               `["\x10\x1F test"]`);
 }
