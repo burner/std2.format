@@ -1816,6 +1816,7 @@ if (is(T == float) || is(T == double)
             start = left + 1;
         }
 
+        // Performance: Extract MASK_60 outside loop (already defined as enum)
         // Generation of digits by consecutive multiplication by 10.
         int lsu = 0; // Least significant ulong; when it get's zero, we can ignore it furtheron
         while ((lsu < count - 1 || mybig[$ - 1] != 0) && right - start - 1 < f.precision)
@@ -1825,7 +1826,7 @@ if (is(T == float) || is(T == double)
             {
                 mybig[i] = mybig[i] * 10 + over;
                 over = mybig[i] >> 60;
-                mybig[i] &= (1L << 60) - 1;
+                mybig[i] &= MASK_60;
             }
             if (mybig[lsu] == 0)
                 ++lsu;
@@ -1854,7 +1855,7 @@ if (is(T == float) || is(T == double)
             {
                 mybig[i] = mybig[i] * 10 + over;
                 over = mybig[i] >> 60;
-                mybig[i] &= (1L << 60) - 1;
+                mybig[i] &= MASK_60;
             }
             rc = over >= 5 ? RoundingClass.UPPER : RoundingClass.LOWER;
         }
@@ -1902,6 +1903,10 @@ if (is(T == float) || is(T == double)
         dec_buf[right++] = '.';
 
         // creating frac part
+        // Performance: Extract invariant shift and mask expressions outside loop
+        immutable frac_shift = T.mant_dig - 1 - exp;
+        immutable frac_mask = (1L << frac_shift) - 1;
+
         static if (g) start = left + (found ? 0 : 1);
         while (frac_part != 0 && right - start - 1 < f.precision)
         {
@@ -1919,8 +1924,8 @@ if (is(T == float) || is(T == double)
                         tail &= (1L << tail_length) - 1;
                 }
             }
-            dec_buf[right++] = cast(byte)('0' + (frac_part >> (T.mant_dig - 1 - exp)));
-
+            dec_buf[right++] = cast(byte)('0' + (frac_part >> frac_shift));
+ 
             static if (g)
             {
                 if (dec_buf[right - 1] != '0')
@@ -1928,8 +1933,8 @@ if (is(T == float) || is(T == double)
                 else if (!found)
                     start++;
             }
-
-            frac_part &= ((1L << (T.mant_dig - 1 - exp)) - 1);
+ 
+            frac_part &= frac_mask;
         }
 
         static if (g) start = save_start;
