@@ -80,7 +80,7 @@ private void bulkWrite(Writer)(auto ref Writer w, char fillChar, size_t count)
     }
 }
 
-void writeAligned(Writer)(auto ref Writer w, string s, scope const ref FormatSpec f)
+package(bformat) void writeAligned(Writer)(auto ref Writer w, string s, scope const ref FormatSpec f)
 {
     FormatSpec fs = f;
     fs.flZero = false;

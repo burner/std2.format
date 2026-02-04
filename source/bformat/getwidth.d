@@ -3,7 +3,7 @@ module bformat.getwidth;
 import std.algorithm.searching : all;
 import std.uni : graphemeStride;
 
-long getWidth(T)(T s)
+package long getWidth(T)(T s)
 {
     // check for non-ascii character
     if (s.all!(a => a <= 0x7F)) return s.length;

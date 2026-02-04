@@ -597,7 +597,7 @@ if (isInputRange!T)
 	
 
 // character formatting with ecaping
-void formatChar(Writer)(ref Writer w, in dchar c, in char quote)
+package(bformat) void formatChar(Writer)(ref Writer w, in dchar c, in char quote)
 {
     if (isGraphical(c))
     {
@@ -1135,7 +1135,7 @@ if (isDelegate!T)
 }
 
 // string elements are formatted like UTF-8 string literals.
-void formatElement(Writer, T)(auto ref Writer w, T val, scope const ref FormatSpec f)
+package(bformat) void formatElement(Writer, T)(auto ref Writer w, T val, scope const ref FormatSpec f)
 if (is(StringTypeOf!T) && !is(T == enum))
 {
     StringTypeOf!T str = val;   // https://issues.dlang.org/show_bug.cgi?id=8015
@@ -1190,7 +1190,7 @@ if (is(StringTypeOf!T) && !is(T == enum))
 }
 
 // Character elements are formatted like UTF-8 character literals.
-void formatElement(Writer, T)(auto ref Writer w, T val, scope const ref FormatSpec f)
+package(bformat) void formatElement(Writer, T)(auto ref Writer w, T val, scope const ref FormatSpec f)
 if (is(CharTypeOf!T) && !is(T == enum))
 {
     if (f.spec == 's')
@@ -1204,7 +1204,7 @@ if (is(CharTypeOf!T) && !is(T == enum))
 }
 
 // Maybe T is noncopyable struct, so receive it by 'auto ref'.
-void formatElement(Writer, T)(auto ref Writer w, auto ref T val, scope const ref FormatSpec f)
+package(bformat) void formatElement(Writer, T)(auto ref Writer w, auto ref T val, scope const ref FormatSpec f)
 if (!is(StringTypeOf!T) && !is(CharTypeOf!T) || is(T == enum))
 {
     formatValue(w, val, f);
@@ -1212,12 +1212,12 @@ if (!is(StringTypeOf!T) && !is(CharTypeOf!T) || is(T == enum))
 
 
 // Fix for https://issues.dlang.org/show_bug.cgi?id=1591
-int getNthInt(string kind, A...)(uint index, A args)
+package(bformat) int getNthInt(string kind, A...)(uint index, A args)
 {
     return getNth!(kind, isIntegral, int)(index, args);
 }
 
-T getNth(string kind, alias Condition, T, A...)(uint index, A args)
+package(bformat) T getNth(string kind, alias Condition, T, A...)(uint index, A args)
 {
     switch (index)
     {
@@ -1247,7 +1247,7 @@ private bool needToSwapEndianess(scope const ref FormatSpec f) @safe pure
         || endian == Endian.bigEndian && f.flDash;
 }
 
-void writeAligned(Writer, T)(auto ref Writer w, T s, scope const ref FormatSpec f)
+package void writeAligned(Writer, T)(auto ref Writer w, T s, scope const ref FormatSpec f)
 if (isSomeString!T)
 {
     FormatSpec fs = f;
@@ -1255,7 +1255,7 @@ if (isSomeString!T)
     writeAligned(w, "", "", s, fs);
 }
 
-enum PrecisionType
+private enum PrecisionType
 {
     none,
     integer,
@@ -1263,7 +1263,7 @@ enum PrecisionType
     allDigits,
 }
 
-void writeAligned(Writer, T1, T2, T3)(auto ref Writer w,
+package void writeAligned(Writer, T1, T2, T3)(auto ref Writer w,
     T1 prefix, T2 grouped, T3 suffix, scope const ref FormatSpec f,
     bool integer_precision = false)
 if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3)
@@ -1272,7 +1272,7 @@ if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3)
                  integer_precision ? PrecisionType.integer : PrecisionType.none);
 }
 
-void writeAligned(Writer, T1, T2, T3, T4)(auto ref Writer w,
+package void writeAligned(Writer, T1, T2, T3, T4)(auto ref Writer w,
     T1 prefix, T2 grouped, T3 fracts, T4 suffix, scope const ref FormatSpec f,
     PrecisionType p = PrecisionType.none)
 if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3 && isSomeString!T4)
@@ -1589,10 +1589,10 @@ if (isSomeString!T1 && isSomeString!T2 && isSomeString!T3 && isSomeString!T4)
 }
 
 
-enum RoundingClass { ZERO, LOWER, FIVE, UPPER }
-enum RoundingMode { up, down, toZero, toNearestTiesToEven, toNearestTiesAwayFromZero }
+private enum RoundingClass { ZERO, LOWER, FIVE, UPPER }
+private enum RoundingMode { up, down, toZero, toNearestTiesToEven, toNearestTiesAwayFromZero }
 
-bool round(T)(ref T sequence, size_t left, size_t right, RoundingClass type, bool negative, char max = '9')
+private bool round(T)(ref T sequence, size_t left, size_t right, RoundingClass type, bool negative, char max = '9')
 in (left >= 0) // should be left > 0, but if you know ahead, that there's no carry, left == 0 is fine
 in (left < sequence.length)
 in (right >= 0)
